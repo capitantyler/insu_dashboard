@@ -39,20 +39,7 @@ ui <- function(){dashboardPage(
     ),
     ###----
     fluidRow(
-      # Grupo Tipo
-      selectizeInput (
-        inputId = "grupo_tipo",
-        label = "Tipo:",
-        choices = setNames(
-          lista_grupo_tipo$opciones,
-          lista_grupo_tipo$opciones_label
-        ),
-        options = list(
-          placeholder = 'Seleccionar',
-          onInitialize = I('function() { this.setValue(""); }')
-        )
-      ),
-      uiOutput ("grupo_id"),
+      ui_grupo_id("grupo_id"),
       disabled(actionButton("do", "Consulta")),
       disabled(downloadButton("download", "Descarga", class = "btn-default"))
     ),

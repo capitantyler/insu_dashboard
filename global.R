@@ -72,7 +72,7 @@ lista_grupo_id <- list(
       distinct(GRUPO_EC) %>%
       arrange(GRUPO_EC),
 
-    default = "CARGILL"
+    default = "OBISPADO DE MORON"
   ),
 
   sucursales = list(
@@ -115,7 +115,7 @@ lista_grupo_id <- list(
         value = CIIU_R2,
         label = paste(sprintf("%2s", CIIU_R2), CIIU_R2_DESC, sep = "-")
       ),
-    default = 111147
+    default = 931012
 
   ),
 
@@ -153,22 +153,22 @@ lista_grupo_id <- list(
 
   uc = list(
 
-    default = "9944 29913"
+    default = "33871 31145"
   ),
 
   pas = list(
 
-    default = "30541336288"
+    default = "20219549939"
   ),
 
   contratos = list(
 
-    default = "423792"  #"188909 345807"
+    default = "227939 310749"  
   ),
 
   cuit = list(
 
-    default = "30632632645 30613665079"
+    default = "30534598420 30643768646"
   )
 
 )
