@@ -1,0 +1,73 @@
+
+#box_tasa, #box_trabajadores {
+ text-align: center;
+ font-size: 1.5em;
+}
+
+#lista_siniestros {
+  white-space: nowrap;
+}
+
+.box_cabecera {
+  background-color: PowderBlue;
+  color: black;
+}
+
+.box-header {
+ text-align: center;
+}
+
+/* cambio del puntero al pasar por encima del checkbox */
+.checkbox {
+  cursor: help;
+}
+
+.col_graficos .col_menu {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.col-sm-1, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6,
+.col-sm-7, .col-sm-8, .col-sm-9, .col-sm-10, .col-sm-11, .col-sm-12 {
+   /*este constructor está dentro de las columnas. No se como tomarlo*/
+  margin-left: 0;
+  margin-right: 0;
+  padding-right: 1px;
+  padding-left: 1px;
+}
+
+.collapsed_text {
+  color: black;
+}
+
+.form-control {
+  background-color: #ffffff;
+  padding: 3px 5px;
+}
+
+.frecuencias {
+  font-style: italic;
+  font-size: 95%;
+  font-weight: bold
+}
+
+.row {
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* formato de las ayudas tooltip */
+.tooltip .tooltiptext {
+  top: -5px;
+  left: 105%;
+}
+
+
+
+/*altura de boxes antes de dibujar*/
+/*.shiny-plot-output {
+  height: 0;
+}
+*/

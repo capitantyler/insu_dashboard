@@ -1,0 +1,201 @@
+# librerías ----
+library(graphics, quietly = T)
+library(stats, quietly = T)
+library(readxl, quietly = T) # para leer xlsx. Es más rápido que open_xlsx
+library(openxlsx, quietly = T)
+library(lubridate, quietly = T)
+library(scales, quietly = T)
+library(rlang, quietly = T)
+library(tidyverse, quietly = T)
+library(data.table, quietly = T)
+library(ggplot2, quietly = T)
+library(gt, quietly = T)
+library(glue, quietly = T)
+library(gtable, quietly = T)
+library(grid, quietly = T)
+library(cowplot, quietly = T)
+library(gridExtra, quietly = T)
+library(shiny, quietly = T)
+library(shinyjs, quietly = T)
+library(shinydashboard, quietly = T)
+library(shinyWidgets, quietly = T)
+library(shinyBS, quietly = T)
+library(DT, quietly = T)
+library(assertthat, quietly = T)
+
+# para el pdf
+library(rmarkdown, quietly = T)
+library(tinytex, quietly = T)
+library(webshot, quietly = T)
+
+
+if(!webshot::is_phantomjs_installed()) webshot::install_phantomjs()
+
+# variables primarias ---
+
+#datafolder          <- Sys.getenv("datafolder")
+datafolder          <- "data/"
+repositorio         <- "utils/"
+output              <- "output/"
+contratos_x_cluster <- 100
+
+# funciones ----
+
+source(paste0(repositorio, "misc/obtiene_utils.R"), encoding = "UTF-8")
+#repositorio <- obtiene_utils(paste0(repositorio, "utils/"))
+repositorio <- obtiene_utils(repositorio)
+
+source(paste0(repositorio["contratos"], "filtrar_tablas.R"), encoding = "UTF-8")
+source(paste0(repositorio["contratos"], "filtrar_nros_contrato.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["emision"], "emision_con_movimientos.R"), encoding = "UTF-8")
+source(paste0(repositorio["emision"], "factor_estacionalidad.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["fechas"], "AAAAMM_diferido.R"), encoding = "UTF-8")
+source(paste0(repositorio["fechas"], "AAAAMM_ejercicio.R"), encoding = "UTF-8")
+source(paste0(repositorio["fechas"], "completa_huecos_MES.R"), encoding = "UTF-8")
+source(paste0(repositorio["fechas"], "proporcion_mes.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["siniestros"], "calcula_siniestralidad.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "genera_reportes_siniestros.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "arma_liquidaciones_reservas.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "ultimate_DFM.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "IBNER_DFM.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "ultimate_BF.R"), encoding = "UTF-8")
+source(paste0(repositorio["siniestros"], "completa_periodos_IBNER.R"), encoding = "UTF-8")
+  #IBNR_siniestros_tasa.R obsoleta. Reemplazar
+source(paste0(repositorio["siniestros"], "IBNR_siniestros_tasa.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["plot"], "eje_y_doble.R"), encoding = "UTF-8")
+source(paste0(repositorio["plot"], "roundUpNice.R"), encoding = "UTF-8")
+source(paste0(repositorio["plot"], "rescaleUp.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["estilos"], "stlExcel_droidgrey.R"), encoding = "UTF-8")
+source(paste0(repositorio["estilos"], "formatear_columnas.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["misc"], "funciones_comunes.R"), encoding = "UTF-8")
+source(paste0(repositorio["misc"], "comprimir_num.R"), encoding = "UTF-8")
+
+source(paste0(repositorio["tests"], "chk_cols.R"), encoding = "UTF-8")
+source(paste0(repositorio["excel"], "excel_utils.R"), encoding = "UTF-8")
+
+# funciones locales
+source("R/calcula_frsa_ju_final.R", encoding = "UTF-8")
+source("R/arma_gt_periodo.R", encoding = "UTF-8")
+source('R/agrega_periodo_frecuencias.R', encoding = 'UTF-8')
+source('R/agrega_periodo_cobertura.R', encoding = 'UTF-8')
+source("R/gt_periodo.R", encoding = "UTF-8")
+source("R/plot_frecuencia.R", encoding = "UTF-8")
+source("R/plot_frecuencia_jud.R", encoding = "UTF-8")
+source("R/plot_frec_porinc_grmu.R", encoding = "UTF-8")
+source("R/plot_siniestralidad_prima.R", encoding = "UTF-8")
+source("R/plot_sdad_ibner.R", encoding = "UTF-8")
+source("R/escribe_cabecera_tablero_HTML.R", encoding = "UTF-8")
+
+message("cargando bases en formato data.table")
+
+contratos.data <- readRDS(paste0(datafolder,"contratos/contratos.Rds"))
+contratos.data <- data.table(contratos.data, key = "CONTRATO")
+
+siniestros.data <- readRDS(paste0(datafolder,"siniestros/siniestros.Rds"))
+siniestros.data <- data.table(siniestros.data, key = "DENUNCIA")
+
+juicios.data <- readRDS(paste0(datafolder,"juicios/juicios.Rds"))
+juicios.data <- data.table(juicios.data, key = c("JUICIO", "CONTRATO"))[
+  ULTIMO_JUICIO == 1
+]
+
+liquidaciones.data <- readRDS(paste0(datafolder,"siniestros/liquidaciones.Rds"))
+liquidaciones.data <- data.table(
+  liquidaciones.data, key = c("DENUNCIA", "MESLIQ", "CONTRATO")
+)
+
+reservas.data <- readRDS(paste0(datafolder,"reservas/reservas.Rds"))
+reservas.data <- data.table(reservas.data, key = c("DENUNCIA", "MES", "CONTRATO"))
+
+emiorig.data <- readRDS(paste0(datafolder,"emision/emiorig.Rds"))
+emiorig.data <- data.table(emiorig.data, key = c("CONTRATO", "MES"))
+
+rectificativa.data <- readRDS(paste0(datafolder,"emision/rectificativa.Rds"))
+rectificativa.data <- data.table(rectificativa.data,
+                                 key = c("CONTRATO", "MESEMI", "MESRECTIFICATIVA")
+)
+
+domesticas.data <- readRDS(paste0(datafolder,"emision/domesticas.Rds"))
+domesticas.data <- data.table(domesticas.data, key = c("CONTRATO", "MES"))
+
+# comisiones.data <- readRDS(paste0(datafolder,"Comis/comisiones.Rds"))
+# comisiones.data <- data.table(comisiones.data, key = c("CONTRATO", "MES"))
+
+# cobranza.data <- readRDS(paste0(datafolder,"cobranza/cobranza.Rds"))
+# cobranza.data <- data.table(cobranza.data,
+#                             key = c("CONTRATO", "MESEMI", "MESREC")
+# )
+
+CIIU.data <- readRDS(paste0(datafolder,"maestros/CIIU_R2.Rds"))
+CIIU.data <- data.table(CIIU.data, key = "CIIU_R2")
+
+sucursal.data <- readRDS(paste0(datafolder,"maestros/sucursal.Rds"))
+sucursal.data <- data.table(sucursal.data, key = "SUC_ID")
+
+provincia.data <- readRDS(paste0(datafolder,"maestros/provincia.Rds"))
+provincia.data <- data.table(provincia.data, key = "ID")
+
+origen.data <- readRDS(paste0(datafolder,"maestros/origen.Rds"))
+origen.data <- data.table(origen.data, key = "ORIGEN")
+
+estado_consecuencia.data <- readRDS(paste0(datafolder,"maestros/estado_consecuencia.Rds"))
+estado_consecuencia.data <- data.table(estado_consecuencia.data, key = "EDOCONS")
+
+estado_siniestro.data <- readRDS(paste0(datafolder,"maestros/estado_siniestro.Rds"))
+estado_siniestro.data <- data.table(estado_siniestro.data, key = "ESTADO_STRO")
+
+pas.data <- readRDS(paste0(datafolder,"maestros/PAS.Rds"))
+pas.data <- data.table(pas.data, key = "CUIT")
+
+pasUC.data <- readRDS(paste0(datafolder,"maestros/PAS_UC.Rds"))
+pasUC.data <- data.table(pasUC.data, key = c("UC", "CUIT"))
+
+cie10.data <- readRDS(paste0(datafolder,"maestros/cie10.Rds"))
+cie10.data <- data.table(cie10.data)
+cie10.data <- cie10.data[,
+  CIE10_DESCR := paste0(
+    COD_ASO, ": ", str_trunc(`DESCRIPCION COD3`, 50)
+  )
+][,
+  .(ID, COD_ASO, CIE10_DESCR)
+]
+setnames(cie10.data, "COD_ASO", "CIE10")
+setkey(cie10.data, ID)
+
+
+titulo_clase.data <- readRDS(paste0(datafolder,"maestros/titulo_clase.Rds"))
+titulo_clase.data <- dplyr::select(
+  titulo_clase.data, CLASE1, CLASE1_ETIQUETA, CLASE3, CLASE3_ETIQUETA
+)
+titulo_clase.data <- data.table(titulo_clase.data, key = "CLASE3")
+
+ripte.data <- readRDS(
+  paste0(datafolder,"mercado/MTyDS/ripte_sipa.Rds")
+)
+ripte.data <- data.table(
+  ripte.data,
+  key = c("MES")
+)[,
+  c("MES", "IRIPTE")
+][,
+  IRIPTE_medio := sqrt(IRIPTE * lead(IRIPTE, 1L))
+]
+
+# obtengo fdas y BC a priori
+fda.data <- readRDS(paste0(datafolder, "ultimates/fda.Rds"))
+fda.data <- data.table(fda.data, key = "d")
+
+ultimates_GSC.data <- readRDS(paste0(datafolder, "ultimates/ultimates_GSC.Rds"))
+ultimates_GSC.data <- data.table(
+  ultimates_GSC.data, key = c("TRIM", "MES_INI", "MES_FIN")
+)
+
+#calculo mes corte de datos
+mes_corte_datos_max <- max(emiorig.data$MES)
+mes_corte_datos_min <- min(emiorig.data$MES)

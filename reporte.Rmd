@@ -1,0 +1,66 @@
+---
+title: "Tablero Integral"
+# author: "Gerencia Técnica, Asociart ART"
+geometry: "left=1.5cm,right=1.5cm,top=2cm,bottom=1.5cm"
+# lang: es-AR
+output:
+  pdf_document: 
+    keep_tex: yes
+documentclass: article
+classoption: a4paper
+params: 
+  vals: NA
+header-includes:
+  - \usepackage{fullpage}
+  - \usepackage{pdflscape}
+  - \usepackage{subfig}
+  - \renewcommand{\figurename}{Fig.} # para que no diga "Figure"
+  - \pagenumbering{gobble} #sin nros de pagina
+---
+
+```{r, include=FALSE}
+options(tinytex.verbose = TRUE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE)
+
+```
+
+```{r cabecera, child = 'cabecera.md'}
+```
+
+
+![Estadísticas por período](gt_tabla.png){ width=100% } 
+
+\clearpage
+
+```{r prima_sdad, fig.cap = 'Prima y Siniestralidad', fig.ncol = 1, out.width = '90%', fig.align = 'center', fig.subcap=c('Waterfall Primas', 'Elementos de la Sdad 0\\textendash100\\%') }
+
+  vals$plotsdadprima
+  vals$plotsdadibner
+
+# plot_grid(
+#   plotlist = list(
+#     vals$plotsdadprima,
+#     vals$plotsdadibner
+#   ),
+#   align = "v", nrow = 2,
+#   labels = c(
+#     'Waterfall Primas', 
+#     'Elementos de la Sdad 0\\textendash100\\%'
+#   )  
+# )
+
+```
+\clearpage
+
+```{r frecuencia, fig.cap="Frecuencias", fig.height=9}
+library(gridExtra)
+library(cowplot)
+
+plot_grid(
+  vals$plotfrectotal, 
+  vals$plotfrecjud, 
+  vals$plotfrecporinc, 
+  align = "v", nrow = 3
+)
+
+```

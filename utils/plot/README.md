@@ -1,0 +1,1 @@
+scripts destinados a gráficos

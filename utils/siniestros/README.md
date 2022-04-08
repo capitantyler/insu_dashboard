@@ -1,0 +1,1 @@
+scripts para trabajar siniestros y siniestralidad.
