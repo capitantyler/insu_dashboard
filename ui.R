@@ -113,7 +113,6 @@ ui <- function(){dashboardPage(
 
   body = dashboardBody(
     useSweetAlert(),
-    uiOutput("ui_cabecera"),
     tabsetPanel(
       tabPanel( #### pestaña principal----
         "Principal",
@@ -144,7 +143,11 @@ ui <- function(){dashboardPage(
             )
           )
         )
-      ),         #### ----
+      ),
+      tabPanel(
+        "cabeceras",
+        uiOutput("ui_cabecera")
+      ),
       tabPanel(
         "frecuencias",
         icon = icon("chart-bar"),
