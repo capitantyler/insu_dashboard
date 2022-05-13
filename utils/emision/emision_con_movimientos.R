@@ -139,6 +139,7 @@ EmisionConMovimientos <- function(
   if(!exists("factor_estacionalidad", mode = "function"))
     source(paste0(repositorio[["emision"]], "factor_estacionalidad.R"))
 
+
   ## Parámetros por default ----
 
   # controlando el cierre de mes sea nro entre 1 y 12
@@ -192,8 +193,10 @@ EmisionConMovimientos <- function(
   # Filtro meses. Se toma un mes previo más para obtener métricas del mes anterior
   emiorig <- emiorig %>%
     filter(
-      MES >= AAAAMM_diferido(!!mesMin, -1L) &
-        MES <= AAAAMM_diferido(!!mesMax, 1L)
+      MES >= AAAAMM_diferido(!!mesMin, -1L)
+    ) %>% 
+    filter(
+      MES <= AAAAMM_diferido(!!mesMax, 1L)
     )
 
   ## ** cobranza ----
@@ -259,7 +262,7 @@ EmisionConMovimientos <- function(
   # Filtro meses. Se toma un mes previo más para obtener métricas del mes anterior
   domesticas <- domesticas %>%
     filter(
-      MES >= AAAAMM_diferido(!!mesMin, -1) &
+      MES >= AAAAMM_diferido(!!mesMin, -1L) &
         MES <= AAAAMM_diferido(!!mesMax, 1L)
     )
 
@@ -268,7 +271,7 @@ EmisionConMovimientos <- function(
     any(reportes %in% c(1,2,3, "rpt0", "rpt1", "rpt2", "rpt3"))
   ){
     if(!is.null(rectificativa)){
-
+    
       if (length(setdiff(rectificativa.colfinales, names(rectificativa))) > 0) {
         stop(
           paste0(c(
@@ -277,7 +280,7 @@ EmisionConMovimientos <- function(
           ), collapse = " ")
         )
       }
-
+      
       if (is.null(modoRectificativa)) {
         warning("modoRectificativa no indicado (A=anticuado , C=contable.
               Utilizando A por default")
@@ -287,10 +290,10 @@ EmisionConMovimientos <- function(
           stop("modoRectificativa incorrecto. Ingrese A=anticuado o C=contable")
         }
       }
-
+  
       rectificativa <- rectificativa %>%
         select(all_of(rectificativa.colfinales))
-
+  
       # Filtro Contratos
       if (!is.null(filtroContratos)) {
         rectificativa <- rectificativa[
@@ -322,7 +325,7 @@ EmisionConMovimientos <- function(
         sym("MESEMI"),
         sym("MESRECTIFICATIVA")
       )
-
+  
       rectificativa.agregada <- rectificativa %>%
         mutate(
           MES = !!MES_AGRUPACION
@@ -454,7 +457,7 @@ EmisionConMovimientos <- function(
 
   # libero memoria
   rm(list = Filter(exists, c("emiorig", "domesticas", "sucursal")))
-
+  
   # proporcionalidad y desestacionalización
 
   emitotal <- emitotal %>%
@@ -530,7 +533,7 @@ EmisionConMovimientos <- function(
       # BAJA: MES que tiene los datos con que se arma la baja
       BAJA = (RESCISION_AAAAMM != 190001) &
         case_when(
-          (DETALLE_MOTIVO == "F") & day(RESCISION) == 1 ~
+          (DETALLE_MOTIVO == "F") & day(RESCISION) == 1L ~
             (MES == AAAAMM_diferido(RESCISION_AAAAMM, -1L)),
           TRUE ~ (MES == RESCISION_AAAAMM)
         ),
@@ -588,7 +591,7 @@ EmisionConMovimientos <- function(
     any(reportes %in% c(1,2,3, "rpt1", "rpt2", "rpt3")) &&
     !is.null(comisiones)
   ){
-    emitotal <- emitotal %>%
+    emitotal <- emitotal %>% 
       left_join(
         comisiones,
         by = c("CONTRATO", "MES")
@@ -603,13 +606,13 @@ EmisionConMovimientos <- function(
     any(reportes %in% c(1,2,3, "rpt1", "rpt2", "rpt3")) &&
     !is.null(cobranza)
   ){
-    emitotal <- emitotal %>%
+    emitotal <- emitotal %>% 
       left_join(
         cobranza,
         by = c("CONTRATO", "MES" = "MESEMI")
       ) %>%
       mutate(
-        COBRANZA = replace_na(COBRANZA, 0) + replace_na(FFEE_REC, 0),
+        COBRANZA = replace_na(COBRANZA, 0) + replace_na(FFEE_REC, 0), 
         FFEE_REC = NULL
       )
   }
@@ -834,29 +837,29 @@ EmisionConMovimientos <- function(
         MES >= !!mesMin &
           MES <= !!mesMax
       )
-
+    
     if(
       !is.null(comisiones)
     ){
       # unifico comisiones y comisiones adicionales
-      rpt2 <- rpt2 %>%
+      rpt2 <- rpt2 %>% 
         mutate(
           COMI = COMI + ADICIONAL,
           COMI_r = COMI_r + ADICIONAL,
           ADICIONAL = NULL
         )
     }
-
+    
     if(
       !is.null(rectificativa)
     ){
-      rpt2 <- rpt2 %>%
+      rpt2 <- rpt2 %>% 
         mutate(
           TRABAJADORESMES_r = TRABAJADORESsinDOM
         )
     }
-
-    rpt2 <- rpt2 %>%
+    
+    rpt2 <- rpt2 %>% 
       mutate(
         # duplico algunas variables
         TRABAJADORESMES = TRABAJADORES,
