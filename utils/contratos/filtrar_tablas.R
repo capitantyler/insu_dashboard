@@ -69,7 +69,7 @@ filtrar_tablas <- function(
     try({lista$CIIU <- CIIU.data[CIIU_R2 %in% lista$contratos$CIIU_R2, ]}, silent = TRUE)
     try({lista$mercado <- mercado.data[CIIU_R2 %in% lista$CIIU$CIIU_R2, ]}, silent = TRUE)
     try({lista$tarifa_clase <- tarifa_clase.data[CLASE %in% lista$contratos$CLASE, ]}, silent = TRUE)
-    try({lista$titulo_clase <- titulo_clase.data[CLASE3 %in% lista$tarifa_clase$CLASE, ]}, silent = TRUE)
+    try({lista$titulo_clase <- titulo_clase.data[CLASE3 %in% lista$contratos$CLASE, ]}, silent = TRUE)
     try({lista$sucursal <- sucursal.data[SUC_ID %in% lista$contratos$SUC, ]}, silent = TRUE)
     try({lista$provincia <- provincia.data[ID %in% lista$contratos$PCIA, ]}, silent = TRUE)
     
