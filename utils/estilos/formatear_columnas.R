@@ -103,7 +103,12 @@ formatear_columnas <- function(
       "LATITUD", "LONGITUD",
       "PORINC", "PUNTOS_EXTRA_PERITOS",
       "SDAD%",
-      "VBLE", "VBLEC"
+      "VBLE", "VBLEC",
+      "ILT_RVA_H_%", "ESP_RVA_H_%", "ILP_RVA_H_%", "JUI_RVA_H_%", "TOT_RVA_H_%",
+      "ILT_IBNER_H_%", "ESP_IBNER_H_%", "ILP_IBNER_H_%", "JUI_IBNER_H_%", "TOT_IBNER_H_%",
+      "ILT_LIQ_0_H_%", "ESP_LIQ_0_H_%", "ILP_LIQ_0_H_%", "JUI_LIQ_0_H_%", "TOT_LIQ_0_H_%", 
+      "ILT_ULT_H_%", "ESP_ULT_H_%", "ILP_ULT_H_%", "JUI_ULT_H_%", "TOT_ULT_H_%", 
+      "RDO_H_%"
     )
   } 
 
@@ -134,14 +139,18 @@ formatear_columnas <- function(
 
   if(is_missing(columnas_pesos2dec)){
     columnas_pesos2dec <- c(
-      "COMI", "COMI_r", "COMISIONES", "COMIRECT",
-      "CUOTA_PACTADA_MDO",
       "ESP_LIQ", "ESP_LIQ_0", "ESP_RVA", "ESP_INC", "ESP_INC", "ESP_ULT",
       "ILT_LIQ", "ILT_LIQ_0", "ILT_RVA", "ILT_INC", "ILT_INC", "ILT_ULT",
       "IND_LIQ", "IND_LIQ_0", "IND_RVA", "IND_INC", "IND_INC", "IND_ULT",
       "ILP_LIQ", "ILP_LIQ_0", "ILP_RVA", "ILP_INC", "ILP_INC", "ILP_ULT",
       "JUI_LIQ", "JUI_LIQ_0", "JUI_RVA", "JUI_INC", "JUI_INC", "JUI_ULT",
       "TOT_LIQ", "TOT_LIQ_0", "TOT_RVA", "TOT_INC", "TOT_INC", "TOT_ULT",
+      "ESP_LIQ_H", "ESP_LIQ_0_H", "ESP_INC_0_H", "ESP_RVA_H", "ESP_IBNER_H", "ESP_ULT_H",
+      "ILT_LIQ_H", "ILT_LIQ_0_H", "ILT_INC_0_H", "ILT_RVA_H", "ILT_IBNER_H", "ILT_ULT_H",
+      "IND_LIQ_H", "IND_LIQ_0_H", "IND_INC_0_H", "IND_RVA_H", "IND_IBNER_H", "IND_ULT_H",
+      "ILP_LIQ_H", "ILP_LIQ_0_H", "ILP_INC_0_H", "ILP_RVA_H", "ILP_IBNER_H", "ILP_ULT_H",
+      "JUI_LIQ_H", "JUI_LIQ_0_H", "JUI_INC_0_H", "JUI_RVA_H", "JUI_IBNER_H", "JUI_ULT_H",
+      "TOT_LIQ_H", "TOT_LIQ_0_H", "TOT_INC_0_H", "TOT_RVA_H", "TOT_IBNER_H", "TOT_ULT_H",
       "ILT_IBNR",	"ESP_IBNR",	"ILP_IBNR",	"IND_IBNR",	"JUI_IBNR", "TOT_IBNR",
       "ILT_IBNER",	"ESP_IBNER", "ILP_IBNER", "IND_IBNER", "JUI_IBNER", "TOT_IBNER",
       "VAR_ILT_RVA", "VAR_ESP_RVA",	"VAR_IND_RVA", "VAR_JUI_RVA",
@@ -151,8 +160,12 @@ formatear_columnas <- function(
       "MONTO_DEMANDA",
       "PREMIO", "PREMIODOM", "PREMIORECT",
       "PRIMA", "PRIMA_r","PRIMA_CALCULO", "PRIMADOM", "PRIMARECT",
+      "PRIMA_r_H", "PRIMA_0_H",
+      "COMI", "COMI_r", "COMISIONES", "COMIRECT",
+      "COMI_r_H", "COMI_0_H",
+      "CUOTA_PACTADA_MDO",
       "ATO_COMU",	"ATO", "REB",	"ATO_NETO",
-      "RDO_TECNICO", "RDO"
+      "RDO_TECNICO", "RDO", "RDO_H"
     )
   } 
 
