@@ -4,6 +4,8 @@
 #'
 #' @param grupo        list           conjunto de datos asociados
 #' @param grupo_tipo   character      tipo de filtro
+#' @param limite_contratos   integer  numero contratos a detallar
+#' @param len_cadenas        integer  largo de caracteres de la actividad
 #'
 #' @return
 #' @export
@@ -16,7 +18,9 @@
 #' @examples
 escribe_cabecera_tablero_HTML <- function(
   grupo,
-  grupo_tipo
+  grupo_tipo,
+  limite_contratos = 20L,
+  len_cadenas = 50L
 ){
 
   # funciones auxiliares y constantes----
@@ -24,10 +28,10 @@ escribe_cabecera_tablero_HTML <- function(
   combina_tablas_contrato <- function(
     grupo,
     ...,
-    limite_contratos = 20L
+    limite_contratos = limite_contratos,
+    len_cadenas = len_cadenas
   ){
 
-    lenCIIU <- 50L  #largo de cadena de descripción de CIIU
     by_quosure <- quos(...)
 
     # forma descripciones de los campos de contrato.
@@ -47,7 +51,7 @@ escribe_cabecera_tablero_HTML <- function(
       mutate(
         CIIU_R2 = paste(
           CIIU_R2,
-          str_trunc(CIIU_R2_DESC, width = !!lenCIIU, ellipsis = "..."),
+          str_trunc(CIIU_R2_DESC, width = !!len_cadenas, ellipsis = "..."),
           sep = "-"
         )
       )
@@ -108,7 +112,7 @@ escribe_cabecera_tablero_HTML <- function(
             # falta agregar unos puntos suspensivos si supera
             # el número límite de contratos a describir
             .x[["DESCRIPCION"]][
-              1:min(length(.x[["DESCRIPCION"]]),limite_contratos)
+              1:min(length(.x[["DESCRIPCION"]]), limite_contratos)
             ]
           )
         )
@@ -144,7 +148,7 @@ escribe_cabecera_tablero_HTML <- function(
     mydiv <- div(
       class = "parent", id = "contrato",
       strong(CONTRATO),
-      HTML("&rarr;"), CLIENTE, HTML(" &diams;"),
+      HTML("&rarr;"), str_trunc(CLIENTE, len_cadenas), HTML(" &diams;"),
       if(!missing("GRUPO_EC"))
         if(GRUPO_EC != "SD") span(
         span(GRUPO_EC, style="font-style:italic"), HTML(" &diams;")
@@ -225,7 +229,9 @@ escribe_cabecera_tablero_HTML <- function(
 
       cabecera <- combina_tablas_contrato(
         grupo,
-        CUIT_PAS, PRODUCTOR, UC
+        CUIT_PAS, PRODUCTOR, UC,
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       if(grupo_tipo == "uc"){
@@ -261,7 +267,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         GRUPO_EC,
-        limite_contratos = 200L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -290,7 +297,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         SUC, SUCURSAL, RESPONSABLE,
-        limite_contratos = 50L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -319,7 +327,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         REG, REGION, RESPONSABLE,
-        limite_contratos = 50L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -345,7 +354,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         PCIA, PROVINCIA,
-        limite_contratos = 50L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -372,7 +382,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         CIIU_R2, CIIU_R2_DESCR,
-        limite_contratos = 50L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -402,7 +413,9 @@ escribe_cabecera_tablero_HTML <- function(
 
       cabecera <- combina_tablas_contrato(
         grupo,
-        CLASE1
+        CLASE1,
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -427,7 +440,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         CIIU_R2_1d, CIIU_R2_1d_DESC,
-        limite_contratos = 50L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -447,7 +461,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         CLASE,
-        limite_contratos = 30L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
@@ -468,7 +483,8 @@ escribe_cabecera_tablero_HTML <- function(
       cabecera <- combina_tablas_contrato(
         grupo,
         CUIT,
-        limite_contratos = 500L
+        limite_contratos = limite_contratos,
+        len_cadenas = len_cadenas
       )
 
       cabecera <- cabecera %>%
