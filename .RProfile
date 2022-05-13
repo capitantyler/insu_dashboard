@@ -22,28 +22,26 @@ library(shinyWidgets, quietly = T)
 library(shinyBS, quietly = T)
 library(DT, quietly = T)
 library(assertthat, quietly = T)
+library(waiter, quietly = T)
 
 # para el pdf
 library(rmarkdown, quietly = T)
 library(tinytex, quietly = T)
 library(webshot, quietly = T)
 
-
 if(!webshot::is_phantomjs_installed()) webshot::install_phantomjs()
 
 # variables primarias ---
 
-#datafolder          <- Sys.getenv("datafolder")
 datafolder          <- "data/"
-repositorio         <- "utils/"
+repositorio         <- ""
 output              <- "output/"
 contratos_x_cluster <- 100
 
 # funciones ----
 
-source(paste0(repositorio, "misc/obtiene_utils.R"), encoding = "UTF-8")
-#repositorio <- obtiene_utils(paste0(repositorio, "utils/"))
-repositorio <- obtiene_utils(repositorio)
+source(paste0(repositorio, "utils/misc/obtiene_utils.R"), encoding = "UTF-8")
+repositorio <- obtiene_utils(paste0(repositorio, "utils/"))
 
 source(paste0(repositorio["contratos"], "filtrar_tablas.R"), encoding = "UTF-8")
 source(paste0(repositorio["contratos"], "filtrar_nros_contrato.R"), encoding = "UTF-8")
@@ -63,7 +61,6 @@ source(paste0(repositorio["siniestros"], "ultimate_DFM.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "IBNER_DFM.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "ultimate_BF.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "completa_periodos_IBNER.R"), encoding = "UTF-8")
-  #IBNR_siniestros_tasa.R obsoleta. Reemplazar
 source(paste0(repositorio["siniestros"], "IBNR_siniestros_tasa.R"), encoding = "UTF-8")
 
 source(paste0(repositorio["plot"], "eje_y_doble.R"), encoding = "UTF-8")
@@ -84,23 +81,73 @@ source("R/calcula_frsa_ju_final.R", encoding = "UTF-8")
 source("R/arma_gt_periodo.R", encoding = "UTF-8")
 source('R/agrega_periodo_frecuencias.R', encoding = 'UTF-8')
 source('R/agrega_periodo_cobertura.R', encoding = 'UTF-8')
-source("R/boton_do.R", encoding = "UTF-8")
 source("R/gt_periodo.R", encoding = "UTF-8")
-source("R/plot_frecuencia.R", encoding = "UTF-8")
-source("R/plot_frecuencia_jud.R", encoding = "UTF-8")
-source("R/plot_frec_porinc_grmu.R", encoding = "UTF-8")
-source("R/plot_siniestralidad_prima.R", encoding = "UTF-8")
-source("R/plot_sdad_ibner.R", encoding = "UTF-8")
+source("R/plot_frec_total.R", encoding = "UTF-8")
+source("R/plot_frec_jud.R", encoding = "UTF-8")
+source("R/plot_frec_grmu_porinc.R", encoding = "UTF-8")
+source("R/plot_sdad_prima.R", encoding = "UTF-8")
+source("R/plot_sdad_rvas.R", encoding = "UTF-8")
 source("R/escribe_cabecera_tablero_HTML.R", encoding = "UTF-8")
+
+source("mods/boton_do.R", encoding = "UTF-8")
 source("mods/seleccionar_grupo.R", encoding = "UTF-8")
+source("mods/cabecera.R", encoding = "UTF-8")
+source("mods/cuadro.R", encoding = "UTF-8")
+source("mods/listado_descargable.R", encoding = "UTF-8")
+source("mods/graf_sdad_rvas.R", encoding = "UTF-8")
+source("mods/graf_sdad_prima.R", encoding = "UTF-8")
+source("mods/graf_frec_total.R", encoding = "UTF-8")
+source("mods/graf_frec_jud.R", encoding = "UTF-8")
+source("mods/graf_frec_grmu_porinc.R", encoding = "UTF-8")
+
 
 message("cargando bases en formato data.table")
 
 contratos.data <- readRDS(paste0(datafolder,"contratos/contratos.Rds"))
 contratos.data <- data.table(contratos.data, key = "CONTRATO")
 
+estado_consecuencia.data <- readRDS(paste0(datafolder,"maestros/estado_consecuencia.Rds"))
+estado_consecuencia.data <- data.table(estado_consecuencia.data, key = "EDOCONS")
+
+estado_siniestro.data <- readRDS(paste0(datafolder,"maestros/estado_siniestro.Rds"))
+estado_siniestro.data <- data.table(estado_siniestro.data, key = "ESTADO_STRO")
+
+cie10.data <- readRDS(paste0(datafolder,"maestros/cie10.Rds"))
+cie10.data <- data.table(cie10.data, key = "ID")
+cie10.data <- cie10.data[,
+ CIE10_DESCR := paste0(
+   COD_ASO, ": ", str_trunc(`DESCRIPCION COD3`, 50)
+ )
+][,
+  .(ID, COD_ASO, CIE10_DESCR)
+]
+setnames(cie10.data, "COD_ASO", "CIE10")
+
 siniestros.data <- readRDS(paste0(datafolder,"siniestros/siniestros.Rds"))
 siniestros.data <- data.table(siniestros.data, key = "DENUNCIA")
+siniestros.data <- estado_consecuencia.data[,
+  .(EDOCONS, ESTADO_CONSECUENCIA)
+][
+  siniestros.data,
+  on = .(EDOCONS),
+  allow.cartesian = TRUE
+][,
+  EDOCONS := NULL
+]
+siniestros.data <- estado_siniestro.data[,
+ .(ESTADO_STRO, ESTADO_SINIESTRO)
+][
+  siniestros.data,
+  on = .(ESTADO_STRO),
+  allow.cartesian = TRUE
+]
+siniestros.data <- cie10.data[
+  siniestros.data,
+  on = .(ID = CIE10_id),
+  allow.cartesian = TRUE
+][,
+  ID := NULL
+]
 
 juicios.data <- readRDS(paste0(datafolder,"juicios/juicios.Rds"))
 juicios.data <- data.table(juicios.data, key = c("JUICIO", "CONTRATO"))[
@@ -111,6 +158,12 @@ liquidaciones.data <- readRDS(paste0(datafolder,"siniestros/liquidaciones.Rds"))
 liquidaciones.data <- data.table(
   liquidaciones.data, key = c("DENUNCIA", "MESLIQ", "CONTRATO")
 )
+# eliminar cuando se mejore la división entre renta GI e ILP
+# liquidaciones.data[,
+#   IND_LIQ := ILP_LIQ + RENTA_LIQ
+# ][,
+#   c("ILP_LIQ", "RENTA_LIQ") := NULL
+# ]
 
 reservas.data <- readRDS(paste0(datafolder,"reservas/reservas.Rds"))
 reservas.data <- data.table(reservas.data, key = c("DENUNCIA", "MES", "CONTRATO"))
@@ -126,14 +179,6 @@ rectificativa.data <- data.table(rectificativa.data,
 domesticas.data <- readRDS(paste0(datafolder,"emision/domesticas.Rds"))
 domesticas.data <- data.table(domesticas.data, key = c("CONTRATO", "MES"))
 
-# comisiones.data <- readRDS(paste0(datafolder,"Comis/comisiones.Rds"))
-# comisiones.data <- data.table(comisiones.data, key = c("CONTRATO", "MES"))
-
-# cobranza.data <- readRDS(paste0(datafolder,"cobranza/cobranza.Rds"))
-# cobranza.data <- data.table(cobranza.data,
-#                             key = c("CONTRATO", "MESEMI", "MESREC")
-# )
-
 CIIU.data <- readRDS(paste0(datafolder,"maestros/CIIU_R2.Rds"))
 CIIU.data <- data.table(CIIU.data, key = "CIIU_R2")
 
@@ -146,30 +191,11 @@ provincia.data <- data.table(provincia.data, key = "ID")
 origen.data <- readRDS(paste0(datafolder,"maestros/origen.Rds"))
 origen.data <- data.table(origen.data, key = "ORIGEN")
 
-estado_consecuencia.data <- readRDS(paste0(datafolder,"maestros/estado_consecuencia.Rds"))
-estado_consecuencia.data <- data.table(estado_consecuencia.data, key = "EDOCONS")
-
-estado_siniestro.data <- readRDS(paste0(datafolder,"maestros/estado_siniestro.Rds"))
-estado_siniestro.data <- data.table(estado_siniestro.data, key = "ESTADO_STRO")
-
 pas.data <- readRDS(paste0(datafolder,"maestros/PAS.Rds"))
 pas.data <- data.table(pas.data, key = "CUIT")
 
 pasUC.data <- readRDS(paste0(datafolder,"maestros/PAS_UC.Rds"))
 pasUC.data <- data.table(pasUC.data, key = c("UC", "CUIT"))
-
-cie10.data <- readRDS(paste0(datafolder,"maestros/cie10.Rds"))
-cie10.data <- data.table(cie10.data)
-cie10.data <- cie10.data[,
-  CIE10_DESCR := paste0(
-    COD_ASO, ": ", str_trunc(`DESCRIPCION COD3`, 50)
-  )
-][,
-  .(ID, COD_ASO, CIE10_DESCR)
-]
-setnames(cie10.data, "COD_ASO", "CIE10")
-setkey(cie10.data, ID)
-
 
 titulo_clase.data <- readRDS(paste0(datafolder,"maestros/titulo_clase.Rds"))
 titulo_clase.data <- dplyr::select(
@@ -178,7 +204,7 @@ titulo_clase.data <- dplyr::select(
 titulo_clase.data <- data.table(titulo_clase.data, key = "CLASE3")
 
 ripte.data <- readRDS(
-  paste0(datafolder,"mercado/MTyDS/ripte_sipa.Rds")
+  paste0(datafolder, "mercado/MTyDS/ripte_sipa.Rds")
 )
 ripte.data <- data.table(
   ripte.data,

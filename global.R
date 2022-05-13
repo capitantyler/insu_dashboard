@@ -21,7 +21,7 @@ patron_fda <- c(
   1.18128, 1.048189, 1.028861, 1.01834, 1.010708, 1.005068
 )
 # número de períodos
-periodos_n <- 15L
+periodos_n_max <- 15L
 
 
 ## lista de grupos ----
@@ -72,7 +72,7 @@ lista_grupo_id <- list(
       distinct(GRUPO_EC) %>%
       arrange(GRUPO_EC),
 
-    default = "OBISPADO DE MORON"
+    default = "CARGILL"
   ),
 
   sucursales = list(
@@ -115,7 +115,7 @@ lista_grupo_id <- list(
         value = CIIU_R2,
         label = paste(sprintf("%2s", CIIU_R2), CIIU_R2_DESC, sep = "-")
       ),
-    default = 931012
+    default = 111147
 
   ),
 
@@ -153,22 +153,22 @@ lista_grupo_id <- list(
 
   uc = list(
 
-    default = "33871 31145"
+    default = "9944 29913"
   ),
 
   pas = list(
 
-    default = "20219549939"
+    default = "30541336288"
   ),
 
   contratos = list(
 
-    default = "227939 310749"  
+    default = "423792"  #"188909 345807"
   ),
 
   cuit = list(
 
-    default = "30534598420 30643768646"
+    default = "30632632645 30613665079"
   )
 
 )

@@ -1,6 +1,6 @@
 #' Gráfico "Siniestralidad reservas e IBNER"
 #'
-#' Se acopla sineistralidad por estadío y tasa de sdsd en un mismo gráfico
+#' Se acopla siniestralidad por estadío y tasa de sdsd en un mismo gráfico
 #' mediante el método de equivalencia de ejes.
 #'
 #' PER               numeric  periodo
@@ -22,7 +22,7 @@
 #' mesMax = mesMax
 #' )
 #'
-#' plot <- plot_sdad_ibner(
+#' plot <- plot_sdad_rvas(
 #'   rpt$PER,
 #'   rpt$PRIMA_r,
 #'   rpt$TOT_LIQ,
@@ -31,9 +31,9 @@
 #'   PER_x = periodos
 #' )
 #' grid.newpage()
-#' grid.draw(plot_sdad_ibner(df))
+#' grid.draw(plot_sdad_rvas(df))
 
-plot_sdad_ibner <- function(
+plot_sdad_rvas <- function(
   PER,
   PRIMA_ANUAL,
   TOT_LIQ,
@@ -147,20 +147,6 @@ plot_sdad_ibner <- function(
       size = 4
     )
 
-  # siniestralidad por tipo (texto)
-  # anulado, demasiados números
-  # p <- p + geom_text_repel(
-  #     aes(
-  #       y = label_ypos,
-  #       label = paste0(round(sdad * 100, 1), "%")
-  #     ),
-  #     direction = "y",
-  #     point.padding = 0.5,
-  #     color = "black",
-  #     size = 3,
-  #     fontface = "italic"
-  #   )
-
   # eje x
   if(!is.null(PER_x)) {
     p <- p + coord_cartesian(
@@ -169,7 +155,6 @@ plot_sdad_ibner <- function(
   }
 
   # ejes y
-
   p <- p + scale_y_continuous(
     limits = c(ymin_ult, ymax_ult),
     breaks = NULL,

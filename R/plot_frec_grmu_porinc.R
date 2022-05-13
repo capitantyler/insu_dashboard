@@ -25,7 +25,7 @@
 #'   mesMax = mesMax
 #' )
 #'
-#' plot <- plot_frec_porinc_grmu(
+#' plot <- plot_frec_grmu_porinc(
 #'   rpt$PER,
 #'   rpt$GR,
 #'   rpt$GR_ULT,
@@ -38,7 +38,7 @@
 #' grid.newpage()
 #' grid.draw(plot)
 
-plot_frec_porinc_grmu <- function(
+plot_frec_grmu_porinc <- function(
   PER,
   GR,
   GR_ULT,
