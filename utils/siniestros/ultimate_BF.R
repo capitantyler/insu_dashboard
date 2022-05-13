@@ -48,7 +48,9 @@ ultimate_BF <- function(
     # si se pasa fct_inf, se está pidiendo moneda homogénea
 
     if(estricto){
-      if(length(fct_inf) < t_max) stop("ultimate_BF: vector fct_inf corto")
+      if(length(fct_inf) < t_max){
+        stop("ultimate_BF: vector fct_inf corto")
+      } 
     } else {
       # completo factor inflación si es necesario
       if(length(fct_inf) < t_max) {

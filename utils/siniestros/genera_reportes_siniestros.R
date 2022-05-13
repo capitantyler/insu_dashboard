@@ -390,7 +390,7 @@ genera_reportes_siniestros <- function(
     }
     
   } else {
-    
+
     # parche: debería entrar en la función completa_periodos_IBNER 
     # con metodo_IBNER == "NO"
     stros_liqui_rvas[,`:=`(
@@ -404,6 +404,10 @@ genera_reportes_siniestros <- function(
     )]
     
     stros_liqui_rvas[,`:=`(
+      ILT_IBNER = 0,
+      ESP_IBNER = 0,
+      ILP_IBNER = 0,
+      JUI_IBNER = 0,
       ILT_ULT = ILT_INC,
       ESP_ULT = ESP_INC,
       ILP_ULT = ILP_INC,
@@ -455,8 +459,7 @@ genera_reportes_siniestros <- function(
     )
 
     rpt1 <- arma_siniestros_rpt_agrupa_pesos(
-      # copy(stros_liqui_rvas)[contratos],
-      stros_liqui_rvas[contratos, on = .(CONTRATO)],
+      stros_liqui_rvas[contratos, on = .(CONTRATO), nomatch = NULL],
       cierreDeMes,
       columnas_agrupar = cols_agrupar_rpt1,
       columnas_sumar = cols_sumar
@@ -727,7 +730,6 @@ arma_siniestros_rpt_agrupa_pesos.data.frame <- function(
     mutate(
       # totales
       TOT_LIQ = ILT_LIQ + ESP_LIQ + ILP_LIQ + JUI_LIQ,
-      TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0,
       TOT_RVA = ILT_RVA + ESP_RVA + ILP_RVA + JUI_RVA,
       TOT_ULT = ILT_ULT + ESP_ULT + ILP_ULT + JUI_ULT,
       # incurrido
@@ -737,6 +739,13 @@ arma_siniestros_rpt_agrupa_pesos.data.frame <- function(
       JUI_INC = JUI_LIQ + JUI_RVA,
       TOT_INC = TOT_LIQ + TOT_RVA
     )
+  
+  if("ILT_LIQ_0" %in% columnas_sumar){
+    rpt <- rpt %>% 
+      mutate(
+        TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0
+      )
+  }
   
   # agrego ibnr puro en pesos
   # la inflación y tipo moneda debe ser previamente cargada en el número
@@ -791,27 +800,33 @@ arma_siniestros_rpt_agrupa_pesos.data.table <- function(
   # totales
   rpt[, `:=`(
     TOT_LIQ = ILT_LIQ + ESP_LIQ + ILP_LIQ + JUI_LIQ,
-    TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0,
     TOT_RVA = ILT_RVA + ESP_RVA + ILP_RVA + JUI_RVA,
     TOT_INC = ILT_INC + ESP_INC + ILP_INC + JUI_INC,
     TOT_IBNER = ILT_IBNER + ESP_IBNER + ILP_IBNER + JUI_IBNER,
     TOT_ULT = ILT_ULT + ESP_ULT + ILP_ULT + JUI_ULT
-  )]  
+  )]
   
+  if("ILT_LIQ_0" %in% columnas_sumar){
+    rpt[, `:=`(
+      TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0
+    )]
+  }
+
   # reordeno las columnas
-  
   setcolorder(
     rpt,
     unique(c(
       columnas_total,
       "ILT_IBNER", "ESP_IBNER", "ILP_IBNER", "JUI_IBNER",
-      "TOT_LIQ", "TOT_LIQ_0", "TOT_RVA", "TOT_INC", "TOT_IBNER", "TOT_ULT"
+      {
+        intersect("ILT_LIQ_0", columnas_sumar)
+      }, 
+      "TOT_RVA", "TOT_INC", "TOT_IBNER", "TOT_ULT"
     ))
   )
   
   return(rpt)
 }
-
 
 arma_siniestros_rpt_agrupa_pesos.default <- function(...){
   warning(paste(
