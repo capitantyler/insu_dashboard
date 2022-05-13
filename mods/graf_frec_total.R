@@ -31,6 +31,8 @@ graf_frec_total_Server <- function(
       grafico()
     })
 
+    return(grafico)
+
   })
 
 }

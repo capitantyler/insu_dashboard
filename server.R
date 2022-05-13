@@ -14,12 +14,6 @@ shinyServer(
       grupo = NULL,
       cabecera = NULL,
       rpt_periodo = NULL,
-      gt_tabla = NULL,
-      plotsdadprima = NULL,
-      plotsdadibner = NULL,
-      plotfrectotal = NULL,
-      plotfrecjud = NULL,
-      plotfrecporinc = NULL,
       rpt1_excelDT = NULL,
       rpt_sdad_excelDT = NULL,
       nota_de_calculo = NULL,
@@ -140,6 +134,7 @@ shinyServer(
       mes_rolling = mes_rolling,
       mes_min = mes_min,
       mes_corte_datos = reactive(input$mes_corte_datos),
+      #periodos = periodos,
       periodos_n = reactive(input$periodos_n),
       metodo_IBNER = reactive(input$metodo_IBNER),
       modo_moneda = reactive(input$modo_moneda),
@@ -197,13 +192,13 @@ shinyServer(
 
     #### elementos gráficos ----
 
-    cabecera_Server(
+    cabecera <- cabecera_Server(
       id = "cuadro.cabecera",
       vals = vals,
       seleccion = seleccion
     )
 
-    cuadro_Server(
+    gt_tabla <- cuadro_Server(
       id = "cuadro.1",
       vals = vals,
       # no se puede llamar como reactivo a un elemento solo de lista
@@ -213,31 +208,31 @@ shinyServer(
       nota_al_pie_especial = vals$nota_de_calculo
     )
 
-    graf_sdad_prima_Server(
+    graf_sdad_prima <- graf_sdad_prima_Server(
       id = "plot.sdad.prima",
       vals = vals,
       periodo = vals$periodo
     )
 
-    graf_sdad_rvas_Server(
+    graf_sdad_rvas <- graf_sdad_rvas_Server(
       id = "plot.sdad.rvas",
       vals = vals,
       periodo = vals$periodo
     )
 
-    graf_frec_total_Server(
+    graf_frec_total <- graf_frec_total_Server(
       id = "plot.indice.incidencia",
       vals = vals,
       periodo = vals$periodo
     )
 
-    graf_frec_jud_Server(
+    graf_frec_jud <- graf_frec_jud_Server(
       id = "plot.indice.judicial",
       vals = vals,
       periodo = vals$periodo
     )
 
-    graf_frec_grmu_porinc_Server(
+    graf_frec_grmu_porinc <- graf_frec_grmu_porinc_Server(
       id = "plot.indice.gravedad",
       vals = vals,
       periodo = vals$periodo
@@ -247,18 +242,13 @@ shinyServer(
 
     # listado_descargable_Server(
     #   id = "lista_siniestros",
-    #   #listado = vals$grupo$siniestralidad$rpt1
-    #   #listado = reactive(vals$grupo$siniestralidad$rpt1)
-    #   #listado = vals
-    #   #listado = sdad_rpt1,
     #   listado = rpt
     # )
-
     output$lista_siniestros <- renderDataTable(
       vals$rpt1_excelDT,
       server = FALSE
     )
-    
+
     output$lista_siniestralidad <- renderDataTable(
       vals$rpt_sdad_excelDT,
       server = FALSE
@@ -310,7 +300,8 @@ shinyServer(
               HTML(
                 as.character(
                   map(
-                    vals$cabecera,
+                    cabecera(),
+                    #vals$cabecera,
                     ~ div(
                       .x$children[[1]],
                       strong("TRABAJADORES: "), .x$children[[2]],
@@ -328,7 +319,7 @@ shinyServer(
             )
             # hago una imagen temporal de la tabla (no la pude llevar a latex)
             gtsave(
-              vals$gt_tabla,
+              gt_tabla(),
               # valor elevado de pixels del ancho del viewport (pantalla)
               vwidth = 2500,
               file = file.path(tempdir(), "gt_tabla.png")

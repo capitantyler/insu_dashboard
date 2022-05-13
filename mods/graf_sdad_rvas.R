@@ -17,7 +17,6 @@ graf_sdad_rvas_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    #req(vals)
     grafico <- eventReactive(vals$rpt_periodo, {
       plot_sdad_rvas(
         vals$rpt_periodo$PER,
@@ -32,6 +31,8 @@ graf_sdad_rvas_Server <- function(
     output$grafico <- renderPlot({
       grafico()
     })
+
+    return(grafico)
 
   })
 

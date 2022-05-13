@@ -33,6 +33,8 @@ graf_frec_grmu_porinc_Server <- function(
       grafico()
     })
 
+    return(grafico)
+
   })
 
 }

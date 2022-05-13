@@ -34,6 +34,8 @@ graf_sdad_prima_Server <- function(
       grafico()
     })
 
+    return(grafico)
+
   })
 
 }

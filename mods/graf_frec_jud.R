@@ -31,6 +31,8 @@ graf_frec_jud_Server <- function(
       grafico()
     })
 
+    return(grafico)
+
   })
 
 }

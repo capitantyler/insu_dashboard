@@ -17,7 +17,6 @@ cuadro_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    #req(vals)
     gt_tabla <- eventReactive(vals$rpt_periodo, {
       gt_periodo(
         vals$rpt_periodo,
@@ -30,6 +29,8 @@ cuadro_Server <- function(
     output$cuadro <- render_gt({
       gt_tabla()
     })
+
+    return(gt_tabla)
 
   })
 

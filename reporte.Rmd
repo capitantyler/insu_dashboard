@@ -34,20 +34,11 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE)
 
 ```{r prima_sdad, fig.cap = 'Prima y Siniestralidad', fig.ncol = 1, out.width = '90%', fig.align = 'center', fig.subcap=c('Waterfall Primas', 'Elementos de la Sdad 0\\textendash100\\%') }
 
-  vals$plotsdadprima
-  vals$plotsdadibner
+graf_sdad_prima()
+graf_sdad_rvas()
 
-# plot_grid(
-#   plotlist = list(
-#     vals$plotsdadprima,
-#     vals$plotsdadibner
-#   ),
-#   align = "v", nrow = 2,
-#   labels = c(
-#     'Waterfall Primas', 
-#     'Elementos de la Sdad 0\\textendash100\\%'
-#   )  
-# )
+#  vals$plotsdadprima
+#  vals$plotsdadibner
 
 ```
 \clearpage
@@ -57,9 +48,12 @@ library(gridExtra)
 library(cowplot)
 
 plot_grid(
-  vals$plotfrectotal, 
-  vals$plotfrecjud, 
-  vals$plotfrecporinc, 
+  graf_frec_total(),
+  graf_frec_jud(),
+  graf_frec_grmu_porinc(),
+  #vals$plotfrectotal, 
+  #vals$plotfrecjud, 
+  #vals$graf_frec_grmu_porinc, 
   align = "v", nrow = 3
 )
 

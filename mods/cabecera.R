@@ -27,6 +27,8 @@ cabecera_Server <- function(
       cabecera()
     })
 
+    return(cabecera)
+
   })
 
 }
