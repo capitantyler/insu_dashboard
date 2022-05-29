@@ -95,7 +95,7 @@ lista_grupo_id <- list(
       select(REG_ID, region) %>%
       distinct(),
 
-    default = "0-METPAT"
+    default = 1 
   ),
 
   provincias = list(
@@ -104,7 +104,7 @@ lista_grupo_id <- list(
       filter(ID %!in% c(0, 25, 99)) %>%
       select(ID, PROVINCIA),
 
-    default = "CAPITAL FEDERAL"
+    default = 5 #"CORRIENTES"
   ),
 
   CIIUR2 = list(

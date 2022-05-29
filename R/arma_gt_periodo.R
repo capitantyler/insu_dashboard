@@ -18,7 +18,7 @@ arma_gt_periodo <- function(
 
   frecuencias_per <- frecuencias_per %>%
     select(
-      -SALARIO, -PORINC, -PORINC_66, -EDAD
+      -any_of(c("SALARIO", "PORINC", "PORINC_66", "EDAD"))
     ) %>%
     group_by(
       PER
@@ -30,18 +30,6 @@ arma_gt_periodo <- function(
         .names = "{col}"
       ),
       .groups = "drop"
-    )
-
-  # agrego promedios por período
-  siniestros_prom_per <- frecuencias_per %>%
-    mutate( # calculo variables
-      EDAD = if_else(N == 0L, 0, EDADs / N),
-      PORINC_66 = if_else(
-        GR_66 == 0L,
-        0,
-        PORINC_66s / GR_66
-      ),
-      SALARIO_ACC = if_else(N == 0L, 0, SALARIOs / N)
     )
 
   frsa_per <- agrega_periodo_frecuencias(
@@ -71,7 +59,7 @@ arma_gt_periodo <- function(
 
   tablero <- emision_per %>%
     left_join(
-      siniestros_prom_per, by = "PER"
+      frecuencias_per, by = "PER"
     ) %>%
     left_join(
       frsa_per, by = "PER"
@@ -87,6 +75,11 @@ arma_gt_periodo <- function(
       # valor de porcentaje de incapacidad observado
       VALOR_PORINC = if_else(
         PORINCs == 0, 0, (ILP_LIQ + ILP_RVA) / PORINCs
+      ),
+      PORINC_66 = if_else(
+        GR_66 == 0L,
+        0,
+        PORINC_66s / GR_66
       ),
       PER_ETIQUETA = paste0(
         PER * 100L + if_else(mes_rolling == 12L, 1, mes_rolling + 1),

@@ -12,8 +12,6 @@ shinyServer(
 
     vals <- reactiveValues(
       grupo = NULL,
-      cabecera = NULL,
-      rpt_periodo = NULL,
       rpt1_excelDT = NULL,
       rpt_sdad_excelDT = NULL,
       nota_de_calculo = NULL,
@@ -127,14 +125,13 @@ shinyServer(
       seleccion = seleccion,
       success = success,
       # así no! porque `$` convierte refs a values en reactivevalues.
-      # Hay qu ellamar a la variable reactiva completa
+      # Hay que llamar a la variable reactiva completa
       # grupo_tipo = seleccion$grupo_tipo,
       # grupo_id = seleccion$grupo_id,
       sin_covid19 = reactive(input$sin_covid19),
       mes_rolling = mes_rolling,
       mes_min = mes_min,
       mes_corte_datos = reactive(input$mes_corte_datos),
-      #periodos = periodos,
       periodos_n = reactive(input$periodos_n),
       metodo_IBNER = reactive(input$metodo_IBNER),
       modo_moneda = reactive(input$modo_moneda),

@@ -15,6 +15,7 @@ listado_descargable_Server <- function(
   moduleServer(id, function(input, output, session) {
 
     observeEvent(listado, {
+      browser()
     }, ignoreInit = TRUE)
 
     listado_local <- eventReactive(listado, {

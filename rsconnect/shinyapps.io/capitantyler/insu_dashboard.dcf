@@ -1,0 +1,13 @@
+name: insu_dashboard
+title:
+username:
+account: capitantyler
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6293786
+bundleId: 5903969
+url: https://capitantyler.shinyapps.io/insu_dashboard/
+when: 1652467840.63499
+lastSyncTime: 1652467840.63499
+asMultiple: FALSE
+asStatic: FALSE

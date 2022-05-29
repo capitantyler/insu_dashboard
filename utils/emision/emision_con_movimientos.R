@@ -139,7 +139,6 @@ EmisionConMovimientos <- function(
   if(!exists("factor_estacionalidad", mode = "function"))
     source(paste0(repositorio[["emision"]], "factor_estacionalidad.R"))
 
-
   ## Parámetros por default ----
 
   # controlando el cierre de mes sea nro entre 1 y 12
@@ -459,7 +458,6 @@ EmisionConMovimientos <- function(
   rm(list = Filter(exists, c("emiorig", "domesticas", "sucursal")))
   
   # proporcionalidad y desestacionalización
-
   emitotal <- emitotal %>%
     left_join(
       contratos %>% rename(
@@ -616,7 +614,7 @@ EmisionConMovimientos <- function(
         FFEE_REC = NULL
       )
   }
-
+  
   # emisión anterior
   if(any(reportes %in% c(4, 5, "rpt4", "rpt5"))){
     emitotal <- emitotal %>%

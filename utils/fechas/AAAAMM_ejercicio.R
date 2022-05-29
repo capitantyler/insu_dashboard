@@ -20,8 +20,8 @@
 #'
 AAAAMM_ejercicio <- function(x, cierreDeMes = 6L) {
   if_else(
-    between(x %% 100, 0, cierreDeMes) & cierreDeMes != 12L, 
-    x %/% 100 - 1L, 
-    x %/% 100
+    between(x %% 100L, 0L, cierreDeMes) & cierreDeMes != 12L, 
+    x %/% 100L - 1L, 
+    x %/% 100L
   )
 }

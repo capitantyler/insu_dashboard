@@ -91,7 +91,7 @@ genera_reportes_siniestros <- function(
   fx <- c(
     "%!in%", "AAAAMM_diferido", "AAAAMM_ejercicio", "chk_cols"
   )
-  
+
   # assert_that. Produce el sig error
   # Error in gregexpr(calltext, singleline, fixed = TRUE) : 
   #  regular expression is invalid UTF-8
@@ -416,21 +416,30 @@ genera_reportes_siniestros <- function(
     
   }
 
-  # Columnas de siniestros, a remover de los reportes por contrato.
-  # Recordar que siniestros, puede venir con datos contrato.
+  # agrego datos de juicios a siniestros
+  siniestros <- juicios[
+    juicios[,.I[1], by = DENUNCIA]$V1
+  ][
+    ,.(DENUNCIA, AAAAMM_NOTIF_JUICIO)
+  ][
+    siniestros, on = .(DENUNCIA)
+  ]
+  
+  # Agrego las columnas solicitadas de contrato.
+  stros_liqui_rvas <- contratos[stros_liqui_rvas, on = .(CONTRATO), nomatch = NULL]  
+  siniestros <- contratos[siniestros, on = .(CONTRATO), nomatch = NULL]  
+  
+  # Configuro las columnas a agrupar y sumar
   cols_agrupar <- unique(c(
-    "CONTRATO", 
-    names(siniestros), 
-    "d", "t", "MES"
-    #"d", "t", "MES", "BIT_JUI", "AAAAMM_NOTIF_JUICIO"
+    names(contratos),
+    names(siniestros)
   ))
 
   cols_sumar <- setdiff(
-    names(stros_liqui_rvas), 
-    cols_agrupar
+    x = c("BIT_JUI" , names(stros_liqui_rvas)), 
+    y = c(cols_agrupar, "d", "t", "MES", "PER")
   )
-  
-  
+
   ## ** rpt0 ----
   
   if (any(c(0,"rpt0") %in% reportes)) {
@@ -442,24 +451,17 @@ genera_reportes_siniestros <- function(
     
   }
   
-  
   ## ** rpt1 ----
   
   if (any(c(1,"rpt1") %in% reportes)) {
-    
+
     # me quedo con las columnas definidas en siniestro, pertenecientes a
     # contratos. Aseguro exista DENUNCIA y MESACC
-
-    cols_agrupar_rpt1 <- unique(
-      c(
-        names(contratos),
-        names(siniestros)
-        # names(siniestros), "AAAAMM_NOTIF_JUICIO"
-      )
-    )
+    cols_agrupar_rpt1 <- cols_agrupar
 
     rpt1 <- arma_siniestros_rpt_agrupa_pesos(
-      stros_liqui_rvas[contratos, on = .(CONTRATO), nomatch = NULL],
+      stros_liqui_rvas,
+      #stros_liqui_rvas[contratos, on = .(CONTRATO), nomatch = NULL],
       cierreDeMes,
       columnas_agrupar = cols_agrupar_rpt1,
       columnas_sumar = cols_sumar
@@ -476,8 +478,7 @@ genera_reportes_siniestros <- function(
     # contratos. Aseguro exista MESACC
     cols_agrupar_rpt2 <- unique(
       c(
-        intersect(cols_agrupar, names(contratos)), 
-        "MESACC"
+        cols_agrupar, "MESACC"
       )
     )
     rpt2 <- arma_siniestros_rpt_agrupa_pesos(
@@ -497,10 +498,7 @@ genera_reportes_siniestros <- function(
     # me quedo con las columnas definidas en siniestro, pertenecientes a
     # contratos. 
     cols_agrupar_rpt3 <- unique(
-      c(
-        "CONTRATO", "PER",
-        intersect(cols_agrupar, names(contratos))
-      )
+      c(cols_agrupar, "PER")
     )
     
     rpt3 <- arma_siniestros_rpt3(
@@ -534,10 +532,7 @@ genera_reportes_siniestros <- function(
     # me quedo con las columnas definidas en siniestro, pertenecientes a
     # contratos. 
     cols_agrupar_rpt5 <- unique(
-      c(
-        "CONTRATO", "PER",
-        intersect(cols_agrupar, names(contratos))
-      )
+      c(cols_agrupar, "PER")
     )
     
     rpt5 <- arma_siniestros_rpt5(
@@ -559,8 +554,7 @@ genera_reportes_siniestros <- function(
     # contratos. Aseguro exista MESACC
     cols_agrupar_rpt6 <- unique(
       c(
-        intersect(cols_agrupar, names(contratos)), 
-        "CONTRATO", "PER"
+        cols_agrupar, "PER"
       )
     )
 
@@ -708,7 +702,7 @@ arma_siniestros_rpt_agrupa_pesos.data.frame <- function(
       "genera_reporte_siniestros: error interno. Falta definir columnas_agrupar"
     )
   }
-  
+
   columnas_total <- unique(c(columnas_agrupar, columnas_sumar))
   
   rpt <- stros_liqui_rvas_ibner %>%
@@ -739,11 +733,25 @@ arma_siniestros_rpt_agrupa_pesos.data.frame <- function(
       JUI_INC = JUI_LIQ + JUI_RVA,
       TOT_INC = TOT_LIQ + TOT_RVA
     )
-  
-  if("ILT_LIQ_0" %in% columnas_sumar){
+
+  if(
+    any(c("ILT_LIQ_0", "ESP_LIQ_0", "ILP_LIQ_0", "JUI_LIQ_0") %in% columnas_sumar)
+  ){
+    
     rpt <- rpt %>% 
       mutate(
-        TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0
+        TOT_LIQ_0 = NULL,
+        TOT_LIQ_0 = rpt %>% 
+          select(
+            ends_with("_LIQ_0")
+          ) %>% 
+          rowSums()
+      ) %>% 
+      relocate(
+        any_of(
+          c(c("ILT_LIQ_0", "ESP_LIQ_0", "ILP_LIQ_0", "JUI_LIQ_0", "TOT_LIQ_0"))
+        ),
+        .after = TOT_INC
       )
   }
   
@@ -805,26 +813,29 @@ arma_siniestros_rpt_agrupa_pesos.data.table <- function(
     TOT_IBNER = ILT_IBNER + ESP_IBNER + ILP_IBNER + JUI_IBNER,
     TOT_ULT = ILT_ULT + ESP_ULT + ILP_ULT + JUI_ULT
   )]
-  
-  if("ILT_LIQ_0" %in% columnas_sumar){
+
+  if(
+    any(c("ILT_LIQ_0", "ESP_LIQ_0", "ILP_LIQ_0", "JUI_LIQ_0") %in% columnas_sumar)
+  ){
     rpt[, `:=`(
       TOT_LIQ_0 = ILT_LIQ_0 + ESP_LIQ_0 + ILP_LIQ_0 + JUI_LIQ_0
     )]
   }
 
   # reordeno las columnas
+   
   setcolorder(
     rpt,
     unique(c(
       columnas_total,
       "ILT_IBNER", "ESP_IBNER", "ILP_IBNER", "JUI_IBNER",
       {
-        intersect("ILT_LIQ_0", columnas_sumar)
+        intersect("TOT_LIQ_0", columnas_sumar)
       }, 
       "TOT_RVA", "TOT_INC", "TOT_IBNER", "TOT_ULT"
     ))
   )
-  
+
   return(rpt)
 }
 
@@ -1368,7 +1379,19 @@ arma_siniestros_rpt6.data.table <- function(
   columnas_agrupar = c("CONTRATO", "PER")
 ){
 
+  siniestros[,`:=`(
+    PER = AAAAMM_ejercicio(MESACC, cierreDeMes),
+    # borrar, debe hacerlo sólo si se pasa el IBNR
+    N_ULT = IBNR_siniestros_tasa(MESACC, mes_cierre),
+    I = 1
+  )]
+
   columnas_agrupar <- unique(c("CONTRATO", "PER", columnas_agrupar))
+  columnas_agrupar <- setdiff(
+    columnas_agrupar,
+    c("TERMINACION", "ORIGEN", "I")
+  )
+  
   columnas_sumar <- c(
     "N", "IBNR", "N_ULT", "IBNR_fc",
     "A", "C", "AT", "IT", "EP", "SB", "CB", "GR", "GR_66", "GR_T", "MU", "RE", "JU", "JN",
@@ -1377,21 +1400,21 @@ arma_siniestros_rpt6.data.table <- function(
   )
   
   if(nrow(siniestros) == 0L){
-    siniestros[, c("CONTRATO", "PER")] <- NA_integer_
-    siniestros[, columnas_sumar] <- NA_real_
-    siniestros <- siniestros[, 
-      match(c(columnas_agrupar, columnas_sumar), names(siniestros)),
-      with = FALSE 
-    ]
     
+    siniestros[, c(
+      "N", "IBNR", "N_ULT", 
+      "A", "C", "AT", "IT", "EP", "SB", "CB", "GR", "GR_66", "GR_T", "MU", "RE", "JU", "JN",
+      "DIAS_CB", "DIAS_GR", "EDAD", "DIAS_CBs", "DIAS_GRs", "EDADs", "SALARIOs"
+    )] <- NA_integer_
+    
+    siniestros[, c(
+      "IBNR_fc",
+      "PORINC", "PORINC_66", "SALARIO", "PORINCs", "PORINC_66s", "SALARIOs"
+    )] <- NA_real_
+    
+    siniestros[,c("TERMINACION", "ORIGEN", "I")] <- NULL
+
   } else {
-    
-    siniestros[,`:=`(
-      PER = AAAAMM_ejercicio(MESACC, cierreDeMes),
-      # borrar, debe hacerlo sólo si se pasa el IBNR
-      N_ULT = IBNR_siniestros_tasa(MESACC, mes_cierre),
-      I = 1
-    )]
     
     siniestros[,`:=`(
       TERMINACION = factor(
@@ -1403,7 +1426,7 @@ arma_siniestros_rpt6.data.table <- function(
       # siniestros abiertos
       A = fifelse((ESTADO_STRO == 2) | (ESTADO_STRO == 4), 1L, 0L)
     )]
-    
+
     # pivot-wider
     if(siniestros[,.N]>0){
       siniestros <- dcast(
@@ -1416,7 +1439,7 @@ arma_siniestros_rpt6.data.table <- function(
         fill = 0L
       )
       
-      columnas_agrupar <- columnas_agrupar[columnas_agrupar != "TERMINACION"]
+#      columnas_agrupar <- columnas_agrupar[columnas_agrupar != "TERMINACION"]
       
       siniestros[,`:=`(
         I = 1L
@@ -1432,7 +1455,7 @@ arma_siniestros_rpt6.data.table <- function(
         fill = 0L
       )
       
-      columnas_agrupar <- columnas_agrupar[columnas_agrupar != "ORIGEN"]
+#      columnas_agrupar <- columnas_agrupar[columnas_agrupar != "ORIGEN"]
       
     }
     
@@ -1509,9 +1532,9 @@ arma_siniestros_rpt6.data.table <- function(
         PER = AAAAMM_ejercicio(AAAAMM_NOTIF_JUICIO, cierreDeMes)
       )
       ][, 
-        .(JN = .N), keyby = columnas_agrupar #c("DENUNCIA", "PER")
+        .(JN = .N), keyby = c("DENUNCIA", "PER")
       ],
-      by = columnas_agrupar,  #c("DENUNCIA", "PER"),
+      by = c("DENUNCIA", "PER"),
       all.x = TRUE
     )
     
@@ -1520,7 +1543,7 @@ arma_siniestros_rpt6.data.table <- function(
   }  
   
   # reordeno las columnas
-  
+
   setcolorder(
     siniestros,
     unique(c(

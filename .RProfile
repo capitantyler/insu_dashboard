@@ -20,6 +20,7 @@ library(shinyjs, quietly = T)
 library(shinydashboard, quietly = T)
 library(shinyWidgets, quietly = T)
 library(shinyBS, quietly = T)
+library(shinyFeedback, quietly = T)
 library(DT, quietly = T)
 library(assertthat, quietly = T)
 library(waiter, quietly = T)
@@ -32,6 +33,12 @@ library(webshot, quietly = T)
 if(!webshot::is_phantomjs_installed()) webshot::install_phantomjs()
 
 # variables primarias ---
+
+# datafolder          <- Sys.getenv("datafolder")
+# repositorio         <- Sys.getenv("repositorio")
+# output              <- Sys.getenv("output")
+# contratos_x_cluster <- as.integer(Sys.getenv("contratos_x_cluster"))
+# 
 
 datafolder          <- "data/"
 repositorio         <- ""
@@ -61,6 +68,7 @@ source(paste0(repositorio["siniestros"], "ultimate_DFM.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "IBNER_DFM.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "ultimate_BF.R"), encoding = "UTF-8")
 source(paste0(repositorio["siniestros"], "completa_periodos_IBNER.R"), encoding = "UTF-8")
+  #IBNR_siniestros_tasa.R obsoleta. Reemplazar
 source(paste0(repositorio["siniestros"], "IBNR_siniestros_tasa.R"), encoding = "UTF-8")
 
 source(paste0(repositorio["plot"], "eje_y_doble.R"), encoding = "UTF-8")
@@ -77,6 +85,8 @@ source(paste0(repositorio["tests"], "chk_cols.R"), encoding = "UTF-8")
 source(paste0(repositorio["excel"], "excel_utils.R"), encoding = "UTF-8")
 
 # funciones locales
+source("R/calcula_reporte_siniestros.R", encoding = "UTF-8")
+source("R/calcula_EmisionConMovimientos.R", encoding = "UTF-8")
 source("R/calcula_frsa_ju_final.R", encoding = "UTF-8")
 source("R/arma_gt_periodo.R", encoding = "UTF-8")
 source('R/agrega_periodo_frecuencias.R', encoding = 'UTF-8')
@@ -135,7 +145,7 @@ siniestros.data <- estado_consecuencia.data[,
   EDOCONS := NULL
 ]
 siniestros.data <- estado_siniestro.data[,
- .(ESTADO_STRO, ESTADO_SINIESTRO)
+  .(ESTADO_STRO, ESTADO_SINIESTRO)
 ][
   siniestros.data,
   on = .(ESTADO_STRO),
@@ -159,11 +169,11 @@ liquidaciones.data <- data.table(
   liquidaciones.data, key = c("DENUNCIA", "MESLIQ", "CONTRATO")
 )
 # eliminar cuando se mejore la división entre renta GI e ILP
-# liquidaciones.data[,
-#   IND_LIQ := ILP_LIQ + RENTA_LIQ
-# ][,
-#   c("ILP_LIQ", "RENTA_LIQ") := NULL
-# ]
+liquidaciones.data[,
+  IND_LIQ := ILP_LIQ + RENTA_LIQ
+][,
+  c("ILP_LIQ", "RENTA_LIQ") := NULL
+]
 
 reservas.data <- readRDS(paste0(datafolder,"reservas/reservas.Rds"))
 reservas.data <- data.table(reservas.data, key = c("DENUNCIA", "MES", "CONTRATO"))
@@ -204,7 +214,7 @@ titulo_clase.data <- dplyr::select(
 titulo_clase.data <- data.table(titulo_clase.data, key = "CLASE3")
 
 ripte.data <- readRDS(
-  paste0(datafolder, "mercado/MTyDS/ripte_sipa.Rds")
+  paste0(datafolder,"mercado/MTyDS/ripte_sipa.Rds")
 )
 ripte.data <- data.table(
   ripte.data,

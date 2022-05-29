@@ -27,6 +27,18 @@ boton_do_server <- function(
     id,
     function(input, output, session) {
 
+      acomoda_argumentos <- function(args){
+        output <- NULL
+        for (x in seq(length(args))) {
+          list <- args[x]
+          if (is.list(args[[x]]) && !is.data.frame(args[[x]])) {
+            list <- flatten(args[x])
+          }
+          output <- append(output, list)
+        }
+        return(output)
+      }
+
       observeEvent(input$boton_do, {
         req(seleccion$grupo_id)
 
@@ -67,28 +79,6 @@ boton_do_server <- function(
             "contratos con prima emitida $ 0."
           )
 
-          # filtroContratos <- unique(
-          #   contratos.data[
-          #     TIPO != "D" ,
-          #     .(CONTRATO, GRUPO_EC)
-          #   ][
-          #     emiorig.data[MES >= mes_min(),
-          #       .(
-          #         PRIMA = sum(PRIMA),
-          #         TRABAJADORES = sum(TRABAJADORES[MES == mes_corte_datos()])
-          #       ),
-          #       by = CONTRATO
-          #     ],
-          #     on = .(CONTRATO),
-          #     nomatch = NULL
-          #   ][
-          #     PRIMA > 0 &
-          #       (TRABAJADORES >= 50
-          #        | (TRABAJADORES < 50 & GRUPO_EC != "SD")
-          #       )
-          #   ][["CONTRATO"]]
-          # )
-          #
           filtroContratos <- unique(
             contratos.data[
               TIPO != "D" ,
@@ -289,227 +279,101 @@ boton_do_server <- function(
 
         ## reportes siniestralidad y emision ----
 
-        if(
-          length(vals$grupo$contratos$CONTRATO) < contratos_x_cluster
-        ){
-          # llamo con un do call ya que preciso pasar los argumentos como lista
-          # porque cambian los parámetros según método de IBNER
-          ## reportes emisión
-          vals$grupo$emision <- EmisionConMovimientos(
-            reportes = c("rpt1", "rpt2"),
-            emiorig = vals$grupo$emiorig,
-            rectificativa = vals$grupo$rectificativa,
-            domesticas = vals$grupo$domesticas,
-            contratos = vals$grupo$contratos,
-            sucursal = vals$grupo$sucursal,
-            factorContrato = "CONTRATO",
+        args_siniestralidad <- acomoda_argumentos(
+          list(
             mesMin = mes_min(),
             mesMax = mes_corte_datos(),
-            modoRectificativa = "A",
-            cierreDeMes = mes_rolling()
+            mes_cierre = mes_corte_datos(),
+            cierreDeMes = mes_rolling(),
+            # argumentos asociados a funciones externas de ibner e inflación
+            metodo_IBNER = metodo_IBNER(),
+            ibnr_puro = vals$grupo$ibnr_puro,
+            args_metodo()
           )
+        )
 
-          # convierto en data.table (falta programar hacerlo antes)
-          vals$grupo$emision <- lapply(
-            vals$grupo$emision, as.data.table
-          )
-
-          # achico reportes
-          vals$grupo$emision[["rpt1"]] <- vals$grupo$emision[["rpt1"]][,
-             .(
-               CONTRATO, CLIENTE, INIVIG, MES, PER, SALPROM, PRIMA_r, COMI_r
-             )
-          ]
-
-          # creo que se pueden sacar aún más columnas
-          vals$grupo$emision[["rpt2"]] <- vals$grupo$emision[["rpt2"]][,
-             .(
-               CONTRATO, MES, PER,
-               MESES,
-               TRABAJADORES, TRABAJADORESMESsinDOM, TRABAJADORESMES,
-               MASA_desest,
-               TRABAJADORESMES_r, #SALARIO,
-               MASA_r, PREMIO_r, PRIMA_r, COMI_r
-             )
-          ]
-
-          ## reportes  siniestralidad
-
-          if(metodo_IBNER() == "BF_modificado"){
-            # agrego salario promedio emitido
-            vals$grupo$siniestros <- vals$grupo$siniestros[
-              vals$grupo$emision[["rpt1"]][,.(CONTRATO, MES, SALPROM)],
-              SALARIO_EMI := i.SALPROM,
-              on = c(CONTRATO = "CONTRATO", MESACC = "MES")
-            ]
-          }
-
-          vals$grupo$siniestralidad <- do.call(
-            genera_reportes_siniestros,
-            args = c(
-              list(
-                reportes = c("rpt1", "rpt6"),
-                siniestros = vals$grupo$siniestros,
-                liquidaciones = vals$grupo$liquidaciones,
-                reservas = vals$grupo$reservas,
-                juicios = vals$grupo$juicios,
-                contratos = vals$grupo$contratos,
-                mesMin = mes_min(),
-                mesMax = mes_corte_datos(),
-                mes_cierre = mes_corte_datos(),
-                cierreDeMes = mes_rolling(),
-                # argumentos asociados a funciones externas de ibner e inflación
-                metodo_IBNER = metodo_IBNER(),
-                ibnr_puro = vals$grupo$ibnr_puro
-              ),
-              args_metodo()
+        emision <- calcula_emisionConMovimientos(
+          reportes = c("rpt1", "rpt2"),
+          data = vals$grupo,
+          contratos_x_cluster = contratos_x_cluster,
+          columnas_reportes = list(
+            rpt1 = c(
+              "CONTRATO", "CLIENTE", "INIVIG", "MES", "PER",
+              "SALPROM", "PRIMA_r", "COMI_r"
+            ),
+            rpt2 = c(
+              "CONTRATO", "MES", "PER", "MESES",
+              "TRABAJADORES", "TRABAJADORESMESsinDOM", "TRABAJADORESMES",
+              "MASA_desest", "TRABAJADORESMES_r", "MASA_r",
+              "PREMIO_r", "PRIMA_r", "COMI_r"
             )
+          ),
+          modoRectificativa = "A",
+          mesMin = mes_min(),
+          mesMax = mes_corte_datos(),
+          cierreDeMes = mes_rolling()
+        )
+
+        if(metodo_IBNER() == "BF_modificado"){
+          # agrego salario promedio emitido
+          vals$grupo$siniestros <- vals$grupo$siniestros[
+            emision[["rpt1"]][,.(CONTRATO, MES, SALPROM)],
+            SALARIO_EMI := i.SALPROM,
+            on = c(CONTRATO = "CONTRATO", MESACC = "MES")
+          ]
+
+          cols_rpt1_sdad <- c(
+            "CONTRATO", "CLIENTE", "INIVIG",  "MESACC",
+            "SALARIO_EMI", "SALARIO_EMI_0",
+            "ILT_RVA", "ESP_RVA", "ILP_RVA", "JUI_RVA", "TOT_RVA",
+            "ILT_LIQ", "ESP_LIQ", "ILP_LIQ", "JUI_LIQ", "TOT_LIQ",
+            "ILT_INC", "ESP_INC", "ILP_INC", "JUI_INC", "TOT_INC",
+            "ILT_LIQ_0", "ESP_LIQ_0", "ILP_LIQ_0", "JUI_LIQ_0", "TOT_LIQ_0",
+            "ILT_IBNER", "ESP_IBNER", "ILP_IBNER", "JUI_IBNER", "TOT_IBNER",
+            "ILT_ULT", "ESP_ULT", "ILP_ULT", "JUI_ULT", "TOT_ULT"
+          )
+
+          cols_agrupar_rpt2_sdad <- c(
+            "CONTRATO", "CLIENTE", "INIVIG",
+            "SALARIO_EMI", "SALARIO_EMI_0",
+            "MESACC"
           )
 
         } else {
 
-          clusters <- split(
-            vals$grupo$contratos$CONTRATO,
-            ceiling(seq_along(vals$grupo$contratos$CONTRATO)/contratos_x_cluster)
-          )
-          n_cluster <- length(clusters)
-
-          # progress bar
-          progressSweetAlert(
-            session = session,
-            id = "ui_progress_bar_clusters",
-            title = "Procesando...",
-            status = "info",
-            display_pct = TRUE, value = 0
+          cols_rpt1_sdad <- c(
+            "CONTRATO", "CLIENTE", "INIVIG",  "MESACC",
+            "ILT_RVA", "ESP_RVA", "ILP_RVA", "JUI_RVA", "TOT_RVA",
+            "ILT_LIQ", "ESP_LIQ", "ILP_LIQ", "JUI_LIQ", "TOT_LIQ",
+            "ILT_LIQ_0", "ESP_LIQ_0", "ILP_LIQ_0", "JUI_LIQ_0", "TOT_LIQ_0",
+            "ILT_INC", "ESP_INC", "ILP_INC", "JUI_INC", "TOT_INC",
+            "ILT_IBNER", "ESP_IBNER", "ILP_IBNER", "JUI_IBNER", "TOT_IBNER",
+            "ILT_ULT", "ESP_ULT", "ILP_ULT", "JUI_ULT", "TOT_ULT"
           )
 
-          emi_rpt1_list <- vector(mode = "list", length = n_cluster)
-          emi_rpt2_list <- vector(mode = "list", length = n_cluster)
-          sdad_rpt1_list <- vector(mode = "list", length = n_cluster)
-          sdad_rpt6_list <- vector(mode = "list", length = n_cluster)
-
-
-          for(cluster in seq_along(clusters)){
-
-            denuncias_en_cluster <- vals$grupo$siniestros[
-              CONTRATO %in% clusters[[cluster]]
-            ][["DENUNCIA"]]
-
-            ## reportes emisión
-            tmp_emision <- EmisionConMovimientos(
-              reportes = c("rpt1", "rpt2"),
-              emiorig = vals$grupo$emiorig[CONTRATO %in% clusters[[cluster]]],
-              rectificativa = vals$grupo$rectificativa[CONTRATO %in% clusters[[cluster]]],
-              domesticas = vals$grupo$domesticas[CONTRATO %in% clusters[[cluster]]],
-              contratos = vals$grupo$contratos[CONTRATO %in% clusters[[cluster]]],
-              sucursal = vals$grupo$sucursal,
-              factorContrato = "CONTRATO",
-              mesMin = mes_min(),
-              mesMax = mes_corte_datos(),
-              modoRectificativa = "A",
-              cierreDeMes = mes_rolling()
-            )
-            # convierto en data.table (falta programar hacerlo antes)
-            tmp_emision <- lapply(
-              tmp_emision, as.data.table
-            )
-
-            # achico reportes
-            tmp_emision[["rpt1"]] <- tmp_emision[["rpt1"]][,
-             .(
-               CONTRATO, CLIENTE, INIVIG, MES, PER, SALPROM, PRIMA_r, COMI_r
-             )
-            ]
-
-            # creo que se pueden sacar aún más columnas
-            tmp_emision[["rpt2"]] <- tmp_emision[["rpt2"]][,
-             .(
-               CONTRATO, MES, PER,
-               MESES,
-               TRABAJADORES, TRABAJADORESMESsinDOM, TRABAJADORESMES,
-               MASA_desest,
-               TRABAJADORESMES_r, #SALARIO,
-               MASA_r, PREMIO_r, PRIMA_r, COMI_r
-             )
-            ]
-
-            ## reportes siniestralidad
-
-            tmp_siniestros <- vals$grupo$siniestros[DENUNCIA %in% denuncias_en_cluster]
-
-            if(metodo_IBNER() == "BF_modificado"){
-              # agrego salario promedio emitido
-              tmp_siniestros <- tmp_siniestros[
-                tmp_emision[["rpt1"]][,.(CONTRATO, MES, SALPROM)],
-                SALARIO_EMI := i.SALPROM,
-                on = c(CONTRATO = "CONTRATO", MESACC = "MES")
-              ]
-            }
-
-            tmp_siniestralidad <- do.call(
-              genera_reportes_siniestros,
-              args = c(
-                list(
-                  reportes = c("rpt1", "rpt6"),
-                  siniestros = tmp_siniestros,
-                  liquidaciones = vals$grupo$liquidaciones[DENUNCIA %in% denuncias_en_cluster],
-                  reservas = vals$grupo$reservas[DENUNCIA %in% denuncias_en_cluster],
-                  juicios = vals$grupo$juicios[DENUNCIA %in% denuncias_en_cluster],
-                  contratos = vals$grupo$contratos[CONTRATO %in% clusters[[cluster]]],
-                  mesMin = mes_min(),
-                  mesMax = mes_corte_datos(),
-                  mes_cierre = mes_corte_datos(),
-                  cierreDeMes = mes_rolling(),
-                  # argumentos asociados a funciones externas de ibner e inflación
-                  metodo_IBNER = metodo_IBNER(),
-                  ibnr_puro = vals$grupo$ibnr_puro
-                ),
-                args_metodo()
-              )
-            )
-
-            emi_rpt1_list[[cluster]] <- tmp_emision[["rpt1"]]
-            emi_rpt2_list[[cluster]] <- tmp_emision[["rpt2"]]
-            sdad_rpt1_list[[cluster]] <- tmp_siniestralidad[["rpt1"]]
-            sdad_rpt6_list[[cluster]] <- tmp_siniestralidad[["rpt6"]]
-
-            message(paste0(
-              "Calculando por etapas: ",
-              " clúster ", cluster, " de ", n_cluster, " realizado."
-            ))
-
-            updateProgressBar(
-              session = session,
-              id = "ui_progress_bar_clusters",
-              value = cluster / n_cluster * 100,
-            )
-
-          }
-
-          rm(
-            tmp_siniestros, tmp_siniestralidad, tmp_emision,
-            clusters, denuncias_en_cluster
+          cols_agrupar_rpt2_sdad <- c(
+            "CONTRATO", "CLIENTE", "INIVIG",
+            "MESACC"
           )
-
-          gc()
-
-          vals$grupo$emision <- vector(mode = "list", length = 3L)
-          vals$grupo$emision[[1]] <- rbindlist(emi_rpt1_list, use.names = TRUE)
-          rm(emi_rpt1_list)
-          vals$grupo$emision[[2]] <- rbindlist(emi_rpt2_list, use.names = TRUE)
-          rm(emi_rpt2_list)
-          names(vals$grupo$emision) <- c("rpt1", "rpt2")
-
-          vals$grupo$siniestralidad <- vector(mode = "list", length = 2L)
-          vals$grupo$siniestralidad[[1]] <- rbindlist(sdad_rpt1_list, use.names = TRUE)
-          rm(sdad_rpt1_list)
-          vals$grupo$siniestralidad[[2]] <- rbindlist(sdad_rpt6_list, use.names = TRUE)
-          rm(sdad_rpt6_list)
-          names(vals$grupo$siniestralidad) <- c("rpt1", "rpt6")
-
-          closeSweetAlert(session = session)
 
         }
+
+        cols_rpt6_sdad <- c(
+          "PER",
+          "N", "N_ULT", "GR", "GR_66", "MU", "JU", "JN",
+          "PORINCs", "PORINC_66s"
+        )
+
+        siniestralidad <- calcula_reporte_siniestros(
+          reportes = c("rpt1", "rpt6"),
+          denuncias_x_cluster = contratos_x_cluster,
+          data = vals$grupo,
+          columnas_reportes = list(
+            rpt1 = cols_rpt1_sdad,
+            rpt6 = cols_rpt6_sdad
+          ),
+          args_siniestralidad
+        )
 
         # Calcular siniestralidad
 
@@ -519,22 +383,9 @@ boton_do_server <- function(
         # en el parámetro columnas_agrupar ya que solo toma columnas de contrato
         # y como está por siniestro, no es posible diferenciarla de otras columnas.
         # La propuesta es agregar a ... el parámetro columnas_agrupar
-        if(metodo_IBNER() == "BF_modificado"){
-          cols_agrupar_rpt2 <- c(
-            "CONTRATO", "CLIENTE", "INIVIG",
-            "SALARIO_EMI", "SALARIO_EMI_0",
-            "MESACC"
-          )
-        } else {
-          cols_agrupar_rpt2 <- c(
-            "CONTRATO", "CLIENTE", "INIVIG",
-            "MESACC"
-          )
-        }
-
-        vals$grupo$siniestralidad[["rpt2"]] <- vals$grupo$siniestralidad[["rpt1"]][,
+        siniestralidad[["rpt2"]] <- siniestralidad[["rpt1"]][,
            lapply(.SD, sum),
-           keyby = cols_agrupar_rpt2,
+           keyby = cols_agrupar_rpt2_sdad,
            .SDcols = c(
              "ILT_RVA", "ESP_RVA", "ILP_RVA", "JUI_RVA", "TOT_RVA",
              "ILT_LIQ", "ESP_LIQ", "ILP_LIQ", "JUI_LIQ", "TOT_LIQ",
@@ -547,8 +398,8 @@ boton_do_server <- function(
 
         # aplico la moneda
         vals$grupo$siniestralidad_per <- calcula_siniestralidad(
-          reporte_emision_mes = vals$grupo$emision[["rpt1"]],
-          reporte_siniestralidad_mes = vals$grupo$siniestralidad[["rpt2"]],
+          reporte_emision_mes = emision[["rpt1"]],
+          reporte_siniestralidad_mes = siniestralidad[["rpt2"]],
           modo_moneda = modo_moneda(),
           columna_prima = "PRIMA_r",
           columnas_agrupar = "PER",
@@ -558,8 +409,8 @@ boton_do_server <- function(
         )
 
         vals$grupo$siniestralidad_per_cto <- calcula_siniestralidad(
-          reporte_emision_mes = vals$grupo$emision[["rpt1"]],
-          reporte_siniestralidad_mes = vals$grupo$siniestralidad[["rpt2"]],
+          reporte_emision_mes = emision[["rpt1"]],
+          reporte_siniestralidad_mes = siniestralidad[["rpt2"]],
           modo_moneda = modo_moneda(),
           columna_prima = "PRIMA_r",
           columnas_agrupar = c("CONTRATO", "CLIENTE", "INIVIG", "PER"),
@@ -571,48 +422,49 @@ boton_do_server <- function(
 
         # elimino algunas columnas innecesarias de rpt1
         columnas_eliminar_rpt1 <- which(
-          colnames(vals$grupo$siniestralidad[["rpt1"]]) %in% c(
+          colnames(siniestralidad[["rpt1"]]) %in% c(
             "ILT_ULT_H", "ESP_ULT_H",	"ILP_ULT_H",	"JUI_ULT_H",	"JUI_ULT_2017_H",
             "SALARIO_EMI_0", "SALARIO_EMI"
           )
         )
 
-        vals$grupo$siniestralidad[["rpt1"]] <- vals$grupo$siniestralidad[["rpt1"]][,
+        siniestralidad[["rpt1"]] <- siniestralidad[["rpt1"]][,
            !..columnas_eliminar_rpt1
         ]
 
         vals$rpt_periodo <- arma_gt_periodo(
           contratos = vals$grupo$contratos,
-          emision_per = vals$grupo$emision[["rpt2"]],
+          emision_per = emision[["rpt2"]],
           montos_per = vals$grupo$siniestralidad_per,
-          frecuencias_per = vals$grupo$siniestralidad[["rpt6"]],
+          frecuencias_per = siniestralidad[["rpt6"]],
           mes_rolling = mes_rolling(),
           periodos_n = periodos_n(),
           credibilidad_IBNR = credibilidad_IBNR
         )
 
-        vals$rpt1_excelDT <- formatear_columnas(
-          metodo = "DT",
-          objeto = datatable(
-            vals$grupo$siniestralidad$rpt1,
-            selection = 'none',
-            editable = FALSE,
-            rownames = FALSE,
-            extensions = 'Buttons',
-            options = list(
-              pageLength = 25,
-              paging = TRUE,
-              searching = TRUE,
-              fixedColumns = TRUE,
-              autoWidth = TRUE,
-              ordering = TRUE,
-              bInfo = FALSE,
-              dom = 'Bfrtip',
-              class = "display",
-              scrollX = TRUE
-            )
-          )
-        )
+        # vals$rpt1_excelDT <- formatear_columnas(
+        #   metodo = "DT",
+        #   objeto = datatable(
+        #     vals$grupo$siniestralidad$rpt1,
+        #     selection = 'none',
+        #     editable = FALSE,
+        #     rownames = FALSE,
+        #     extensions = 'Buttons',
+        #     options = list(
+        #       pageLength = 25,
+        #       paging = TRUE,
+        #       searching = TRUE,
+        #       fixedColumns = TRUE,
+        #       autoWidth = TRUE,
+        #       ordering = TRUE,
+        #       bInfo = FALSE,
+        #       dom = 'Bfrtip',
+        #       buttons = c('copy'),
+        #       class = "display",
+        #       scrollX = TRUE
+        #     )
+        #   )
+        # )
 
         vals$rpt_sdad_excelDT <- formatear_columnas(
           metodo = "DT",
@@ -631,6 +483,7 @@ boton_do_server <- function(
               ordering = TRUE,
               bInfo = FALSE,
               dom = 'Bfrtip',
+              buttons = c('copy'),
               class = "display",
               scrollX = TRUE
             )

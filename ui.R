@@ -1,3 +1,5 @@
+# jscode <- "shinyjs.closeWindow = function() { window.close(); }"
+
 ui <- function(){
   dashboardPage(
     #### ----
@@ -177,8 +179,8 @@ ui <- function(){
         tabPanel(
           title = "siniestros",
           downloadButton("exporta_excel_stros", "Exportar Excel"),
-          #listado_descargable_UI("lista_siniestros"),
-          DTOutput("lista_siniestros"),
+          listado_descargable_UI("lista_siniestros"),
+          #DTOutput("lista_siniestros"),
           icon = icon("table")
         ),
         tabPanel(

@@ -26,20 +26,26 @@ filtrar_tablas <- function(
   library(data.table)
   library(rlang)
 
-  nombres_lista <- c(
-    "contratos", "emiorig", "rectificativa", "domesticas",
-    "comunicaciones", "cobranza", "comisiones",
-    "CIIU", "sucursal", "provincia",
-    "siniestros", "liquidaciones", "juicios", "reservas", "ibner", "cie10",
-    "mercado", "tarifa_clase", "titulo_clase",
-    "UC", "pasUC", "pas", "ROL"
+  nombres_lista <- paste0(
+    c(
+      "contratos", "emiorig", "rectificativa", "domesticas",
+      "comunicaciones", "cobranza", "comisiones",
+      "CIIU", "sucursal", "provincia",
+      "siniestros", "liquidaciones", "juicios", "reservas", "ibner", "cie10",
+      "mercado", "tarifa_clase", "titulo_clase",
+      "UC", "pasUC", "pas", "ROL"
+    ),
+    ".data"
   )
+
+  # me quedo con los existentes en el .Global
+  nombres_lista <- nombres_lista[nombres_lista %in% ls(envir = .GlobalEnv)] 
 
   lista <- vector(mode = "list", length = length(nombres_lista))
   names(lista) <- nombres_lista
 
   if(is_na(filtroContratos)){
-    lapply(nombres_lista, function(x) try(`<-`(lista[[x]], get(paste0(x, ".data")))))
+    lapply(nombres_lista, function(x) try(`<-`(lista[[x]], get(x))))
   } else {
     try({lista$contratos <- contratos.data[CONTRATO %in% filtroContratos, ]}, silent = TRUE)
     try({lista$emiorig <- emiorig.data[CONTRATO %in% filtroContratos, ]}, silent = TRUE)
