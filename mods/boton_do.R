@@ -313,6 +313,10 @@ boton_do_server <- function(
           mesMax = mes_corte_datos(),
           cierreDeMes = mes_rolling()
         )
+        
+        # parche convertir en data.table
+        #setDT(emision[["rpt2"]], key = c("CONTRATO", "PER"))
+        
 
         if(metodo_IBNER() == "BF_modificado"){
           # agrego salario promedio emitido
@@ -442,29 +446,29 @@ boton_do_server <- function(
           credibilidad_IBNR = credibilidad_IBNR
         )
 
-        # vals$rpt1_excelDT <- formatear_columnas(
-        #   metodo = "DT",
-        #   objeto = datatable(
-        #     vals$grupo$siniestralidad$rpt1,
-        #     selection = 'none',
-        #     editable = FALSE,
-        #     rownames = FALSE,
-        #     extensions = 'Buttons',
-        #     options = list(
-        #       pageLength = 25,
-        #       paging = TRUE,
-        #       searching = TRUE,
-        #       fixedColumns = TRUE,
-        #       autoWidth = TRUE,
-        #       ordering = TRUE,
-        #       bInfo = FALSE,
-        #       dom = 'Bfrtip',
-        #       buttons = c('copy'),
-        #       class = "display",
-        #       scrollX = TRUE
-        #     )
-        #   )
-        # )
+        vals$rpt1_excelDT <- formatear_columnas(
+          metodo = "DT",
+          objeto = datatable(
+            vals$grupo$siniestralidad$rpt1,
+            selection = 'none',
+            editable = FALSE,
+            rownames = FALSE,
+            extensions = 'Buttons',
+            options = list(
+              pageLength = 25,
+              paging = TRUE,
+              searching = TRUE,
+              fixedColumns = TRUE,
+              autoWidth = TRUE,
+              ordering = TRUE,
+              bInfo = FALSE,
+              dom = 'Bfrtip',
+              buttons = c('copy'),
+              class = "display",
+              scrollX = TRUE
+            )
+          )
+        )
 
         vals$rpt_sdad_excelDT <- formatear_columnas(
           metodo = "DT",
