@@ -1,3 +1,12 @@
+
+# .RProfile
+# TODO: esta aplicación realiza una precarga antes de lanzarse,
+#       para agilizar la precarga de bases durante la fase de desarrollo.
+#       queda para trabajar un correcto aislamiento de la app,
+#       Por el momento se mueve a R/init.R, para que la tome shinyapps.io
+source("R/init.R")
+
+
 credibilidad_IBNR_5 <- c(1, 1, 0.85, 0.65, 0.4)
 metodos_BF <- c("CL", "BF", "BF_modificado")
 nota_al_pie_especial <- ""
