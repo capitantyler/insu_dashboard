@@ -97,7 +97,15 @@ calcula_emisionConMovimientos <- function(
     rpt[] <- lapply(
       reportes,
       function(x){
-        rpt[[x]][, .SD, .SDcols = columnas_reportes[[x]]]
+        if(!is.null(columnas_reportes[[x]])){
+          if(inherits_any(rpt[[x]], "data.table")){
+            rpt[[x]][, .SD, .SDcols = columnas_reportes[[x]]]
+          } else {
+            select(rpt[[x]], all_of(columnas_reportes[[x]]))
+          }
+        } else {
+          rpt[[x]]
+        }
       }
     )
   }
