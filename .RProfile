@@ -169,11 +169,11 @@ liquidaciones.data <- data.table(
   liquidaciones.data, key = c("DENUNCIA", "MESLIQ", "CONTRATO")
 )
 # eliminar cuando se mejore la división entre renta GI e ILP
-liquidaciones.data[,
-  IND_LIQ := ILP_LIQ + RENTA_LIQ
-][,
-  c("ILP_LIQ", "RENTA_LIQ") := NULL
-]
+# liquidaciones.data[,
+#   IND_LIQ := ILP_LIQ + RENTA_LIQ
+# ][,
+#   c("ILP_LIQ", "RENTA_LIQ") := NULL
+# ]
 
 reservas.data <- readRDS(paste0(datafolder,"reservas/reservas.Rds"))
 reservas.data <- data.table(reservas.data, key = c("DENUNCIA", "MES", "CONTRATO"))

@@ -72,7 +72,7 @@ lista_grupo_id <- list(
       distinct(GRUPO_EC) %>%
       arrange(GRUPO_EC),
 
-    default = "CARGILL"
+    default = "GRUPO AUTOFARMA"
   ),
 
   sucursales = list(
@@ -83,7 +83,7 @@ lista_grupo_id <- list(
       mutate(sucursal = paste(sprintf("%2s", SUC_ID), SUCURSAL, sep = "-")) %>%
       select(SUC_ID, sucursal),
 
-    default = 14
+    default = 10
   ),
 
   regiones = list(
@@ -104,7 +104,7 @@ lista_grupo_id <- list(
       filter(ID %!in% c(0, 25, 99)) %>%
       select(ID, PROVINCIA),
 
-    default = 5 #"CORRIENTES"
+    default = 2 
   ),
 
   CIIUR2 = list(
@@ -115,7 +115,7 @@ lista_grupo_id <- list(
         value = CIIU_R2,
         label = paste(sprintf("%2s", CIIU_R2), CIIU_R2_DESC, sep = "-")
       ),
-    default = 111147
+    default = 931012
 
   ),
 
@@ -152,8 +152,7 @@ lista_grupo_id <- list(
   ),
 
   uc = list(
-
-    default = "9944 29913"
+    default = "33871"
   ),
 
   pas = list(
@@ -162,13 +161,11 @@ lista_grupo_id <- list(
   ),
 
   contratos = list(
-
-    default = "423792"  #"188909 345807"
+    default = "254631"
   ),
 
   cuit = list(
-
-    default = "30632632645 30613665079"
+    default = "33568889849 33662372159"
   )
 
 )
