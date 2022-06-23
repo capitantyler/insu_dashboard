@@ -25,7 +25,7 @@ agrega_periodo_cobertura <- function(
           .fns = ~sum(., na.rm = TRUE)
         ),
         CONTRATOS = n_distinct(CONTRATO),
-        MESES = mean(MESES),
+        MESES = max(MESES), # mean(MESES),
         .groups = "drop"
       ) %>%
       mutate (

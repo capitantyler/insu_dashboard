@@ -24,6 +24,7 @@ ui <- function(){
     ),
     sidebar = dashboardSidebar(
       #### scripts ----
+      useShinyFeedback(),
       useShinyjs(),
       #### estilos css ----
       includeCSS("www/style.css"),
@@ -178,15 +179,12 @@ ui <- function(){
         ),
         tabPanel(
           title = "siniestros",
-          downloadButton("exporta_excel_stros", "Exportar Excel"),
           listado_descargable_UI("lista_siniestros"),
-          #DTOutput("lista_siniestros"),
           icon = icon("table")
         ),
         tabPanel(
           title = "siniestralidad anual",
-          downloadButton("exporta_excel_sdad", "Exportar Excel"),
-          DTOutput("lista_siniestralidad"),
+          listado_descargable_UI("lista_siniestralidad"),
           icon = icon("table")
         )
       )

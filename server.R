@@ -1,21 +1,11 @@
 shinyServer(
   function(input, output, session){
 
-    # código para detener aplicación, o par aprogramar algo ante cierre de navegador
-    # session$onSessionEnded(stopApp)
+    rpt_sdad_boton_do <- reactiveValues(data = NULL)
 
-    ## Para no tener que regenerar todos los plots y tablas del reporte
-    ## una solución es guardarlos en una variable global que se actualice
-    ## cada vez que cambian
-    ## reactiveValues viene a salvar estos objetos como variables dinámicas.
-    ## vals contiene todos los plots y tablas (grobs).
-
-    vals <- reactiveValues(
-      grupo = NULL,
-      rpt1_excelDT = NULL,
-      rpt_sdad_excelDT = NULL,
-      nota_de_calculo = NULL,
-      periodos = NULL
+    data <- reactiveValues()
+    results <- reactiveValues(
+      cabecera = NULL
     )
 
     success <- reactiveValues(
@@ -27,13 +17,10 @@ shinyServer(
       grupo_tipo = NULL
     )
 
-    # reportes de salida
-    sdad_rpt1 <- reactiveVal()
-    sdad_per_cto <- reactiveVal()
-
     srv_grupo_id("grupo_id", seleccion = seleccion)
 
     mes_rolling <- reactive({
+      req(input$mes_rolling)
       if_else(
         input$rolling == TRUE,
         input$mes_rolling,
@@ -41,29 +28,40 @@ shinyServer(
       )
     })
 
+    observeEvent(
+      eventExpr = input$mes_corte_datos,
+      feedbackWarning("mes_corte_datos", "", "falta dato AAAAMM")
+    )
+
     perCierre <- reactive({
+      req(input$mes_corte_datos)
+
       AAAAMM_ejercicio(input$mes_corte_datos, mes_rolling())
     })
 
     periodos <- reactive({
+      req(input$periodos_n)
       (perCierre() - input$periodos_n + 1L):perCierre()
     })
 
     mes_min <- reactive({
+      req(
+        input$mes_rolling,
+        input$periodos_n,
+        input$mes_corte_datos
+      )
       ifelse(
         input$rolling == TRUE,
         AAAAMM_diferido(
-          max(
-            perCierre() * 100L + mes_rolling(),
-            input$mes_corte_datos
-          ) - input$periodos_n * 100,
-          min(12L, mes_rolling() + 1L)
+          x = (perCierre() - input$periodos_n + 1L) * 100L + mes_rolling(),
+          1L
         ),
         (input$mes_corte_datos %/% 100L - input$periodos_n + 1L) * 100L + 1L
       )
     })
 
     indice_salarial <- reactive({
+      req(input$mes_corte_datos)
 
       ripte.data[
         MES >= AAAAMM_diferido(mes_min(), -1L) & MES <= input$mes_corte_datos
@@ -84,6 +82,7 @@ shinyServer(
 
     # parámetros de BF y BF_modificado
     args_metodo <- reactive({
+      req(input$inflacion_futura_anual)
 
       args <- list(
         cols_fda = c("ILT_LIQ", "ESP_LIQ", "ILP_INC", "JUI_LIQ"),
@@ -105,7 +104,6 @@ shinyServer(
 
         # por ahora, usamos un sólo índice, no va en forma de lista
         fct_inf = indice_salarial()[["INDICE_medio"]],
-        #fct_inf = list(indice_salarial()[["INDICE_medio"]]),
 
         fct_inf_fut = (1 + input$inflacion_futura_anual/100)^(1/12)
 
@@ -119,24 +117,16 @@ shinyServer(
 
     })
 
-    rpt <- boton_do_server(
+    boton_do_server(
       id = "boton_do",
-      vals = vals,
+      emision = emision,
+      siniestralidad = siniestralidad,
       seleccion = seleccion,
+      rpt_sdad_boton_do = rpt_sdad_boton_do,
       success = success,
-      # así no! porque `$` convierte refs a values en reactivevalues.
-      # Hay que llamar a la variable reactiva completa
-      # grupo_tipo = seleccion$grupo_tipo,
-      # grupo_id = seleccion$grupo_id,
-      sin_covid19 = reactive(input$sin_covid19),
-      mes_rolling = mes_rolling,
-      mes_min = mes_min,
       mes_corte_datos = reactive(input$mes_corte_datos),
-      periodos_n = reactive(input$periodos_n),
-      metodo_IBNER = reactive(input$metodo_IBNER),
       modo_moneda = reactive(input$modo_moneda),
-      indice_salarial = indice_salarial,
-      args_metodo = args_metodo
+      indice_salarial = indice_salarial
     )
 
     #### activar botones consultar y download ----
@@ -152,10 +142,25 @@ shinyServer(
       }
     )
 
+    nota_de_calculo <- eventReactive(
+      seleccion$grupo_tipo,
+      {
+        if(
+          seleccion$grupo_tipo != "Asociart"
+        ){
+          ""
+        } else {
+          paste0(
+            "No incluye contratos de régimen doméstico ni ",
+            "contratos con prima emitida $ 0."
+          )
+        }
+      }
+    )
+
     observeEvent(success$boton_do,
       {
         if(success$boton_do == FALSE){
-        #if(is.null(rpt()$success) || rpt()$success == FALSE){
           shinyjs::hide("div_download_pdf")
         } else {
           shinyjs::show("div_download_pdf")
@@ -186,75 +191,153 @@ shinyServer(
       }
     })
 
+    #### data ----
+
+    data <- reactive({
+
+      filtra_datos_tablero(
+        grupo_tipo = seleccion$grupo_tipo,
+        grupo_id = seleccion$grupo_id,
+        mes_min = mes_min(),
+        mes_max = input$mes_corte_datos,
+        sin_covid19 = input$sin_covid19
+      )
+
+    })
+
+    emision <- reactive({
+
+      reportes_emision(
+        data,
+        contratos_x_cluster = contratos_x_cluster,
+        mes_min = mes_min,
+        mes_corte_datos = input$mes_corte_datos,
+        mes_rolling = mes_rolling
+      )
+
+    })
+
+    #### siniestralidad ----
+
+    siniestralidad <- reactive({
+      #timestamp(suffix = glue(": pasa por siniestralidad"))
+      req(emision)
+
+      siniestralidad <- reportes_siniestralidad(
+        data = data(),
+        contratos_x_cluster = contratos_x_cluster,
+        args_siniestralidad = args_siniestralidad(),
+        emision = emision()
+      )
+      return(siniestralidad)
+    })
+
+    args_siniestralidad <- reactive({
+
+      acomoda_argumentos(
+        list(
+          mesMin = mes_min(),
+          mesMax = input$mes_corte_datos,
+          mes_cierre = input$mes_corte_datos,
+          cierreDeMes = mes_rolling(),
+          # argumentos asociados a funciones externas de ibner e inflación
+          metodo_IBNER = input$metodo_IBNER,
+          ibnr_puro = data()$ibnr_puro,
+          args_metodo()
+        )
+      )
+
+    })
+
+    rpt_periodo <- eventReactive(
+      rpt_sdad_boton_do$data,
+      {
+        arma_gt_periodo(
+          contratos = data()$contratos,
+          emision_per = emision()[["rpt2"]],
+          montos_per =  rpt_sdad_boton_do$data$siniestralidad_per,
+          frecuencias_per = siniestralidad()[["rpt6"]],
+          mes_rolling = mes_rolling(),
+          periodos_n = input$periodos_n
+        )
+      }
+    )
 
     #### elementos gráficos ----
 
-    cabecera <- cabecera_Server(
+    cabecera_Server(
       id = "cuadro.cabecera",
-      vals = vals,
-      seleccion = seleccion
+      cabecera = cabecera
     )
+
+    cabecera <- reactive({
+      req(data(), seleccion$grupo_tipo)
+
+      escribe_cabecera_tablero_HTML(
+        grupo = data(),
+        grupo_tipo = seleccion$grupo_tipo,
+        limite_contratos = 20L,
+        len_cadenas = 50L
+      )
+
+    })
 
     gt_tabla <- cuadro_Server(
       id = "cuadro.1",
-      vals = vals,
-      # no se puede llamar como reactivo a un elemento solo de lista
-      # vals = vals$rpt_periodo,
+      rpt_periodo = rpt_periodo,
       modo_moneda = input$modo_moneda,
       siniestralidad_target = opciones$siniestralidad_target,
-      nota_al_pie_especial = vals$nota_de_calculo
+      nota_al_pie_especial = nota_de_calculo()
     )
 
-    graf_sdad_prima <- graf_sdad_prima_Server(
+    results$graf_sdad_prima <- graf_sdad_prima_Server(
       id = "plot.sdad.prima",
-      vals = vals,
-      periodo = vals$periodo
+      vals = rpt_sdad_boton_do,
+      periodo = periodos()
     )
 
-    graf_sdad_rvas <- graf_sdad_rvas_Server(
+    results$graf_sdad_rvas <- graf_sdad_rvas_Server(
       id = "plot.sdad.rvas",
-      vals = vals,
-      periodo = vals$periodo
+      vals = rpt_sdad_boton_do,
+      periodo = periodos()
     )
 
-    graf_frec_total <- graf_frec_total_Server(
+    results$graf_frec_total <- graf_frec_total_Server(
       id = "plot.indice.incidencia",
-      vals = vals,
-      periodo = vals$periodo
+      vals = rpt_periodo(),
+      periodo = periodos() #vals$periodo
     )
 
-    graf_frec_jud <- graf_frec_jud_Server(
+    results$graf_frec_jud <- graf_frec_jud_Server(
       id = "plot.indice.judicial",
-      vals = vals,
-      periodo = vals$periodo
+      vals = rpt_periodo(),
+      periodo = periodos() #vals$periodo
     )
 
-    graf_frec_grmu_porinc <- graf_frec_grmu_porinc_Server(
+    results$graf_frec_grmu_porinc <- graf_frec_grmu_porinc_Server(
       id = "plot.indice.gravedad",
-      vals = vals,
-      periodo = vals$periodo
+      vals = rpt_periodo(),
+      periodo = periodos() #vals$periodo
     )
 
     #### listados de datos ----
 
-    # listado_descargable_Server(
-    #   id = "lista_siniestros",
-    #   listado = rpt
-    # )
-    output$lista_siniestros <- renderDataTable(
-      vals$rpt1_excelDT,
-      server = FALSE
+    listado_descargable_Server(
+      id = "lista_siniestros",
+      listado = reactive({
+        siniestralidad()[["rpt1"]]
+      }),
+      seleccion = seleccion
     )
 
-    output$lista_siniestralidad <- renderDataTable(
-      vals$rpt_sdad_excelDT,
-      server = FALSE
+    listado_descargable_Server(
+      id = "lista_siniestralidad",
+      listado = reactive(
+        rpt_sdad_boton_do[["data"]][["siniestralidad_per_cto"]]
+      ),
+      seleccion = seleccion
     )
 
-    #### botón descargar ----
-
-    # debe estar instalado PahntomJS  webshot::is_phantomjs_installed()
-    # instalar con webshot::install_phantomjs()
 
     output$download_pdf <- downloadHandler(
       filename = function(){
@@ -291,14 +374,12 @@ shinyServer(
             # permission to the current working directory
             owd <- setwd(tempdir())
             on.exit(setwd(owd))
-
             # hago un HTML temporal de la cabecera
             htmltools::save_html(
               HTML(
                 as.character(
                   map(
                     cabecera(),
-                    #vals$cabecera,
                     ~ div(
                       .x$children[[1]],
                       strong("TRABAJADORES: "), .x$children[[2]],
@@ -315,6 +396,7 @@ shinyServer(
               out = "cabecera.md"
             )
             # hago una imagen temporal de la tabla (no la pude llevar a latex)
+
             gtsave(
               gt_tabla(),
               # valor elevado de pixels del ancho del viewport (pantalla)
@@ -330,7 +412,7 @@ shinyServer(
               pdf_document(
                 latex_engine = "xelatex"
               ),
-              params = list(vals = vals)
+              params = list(vals = results)
             )
 
             for (i in 13:15) {
@@ -343,74 +425,6 @@ shinyServer(
             file.rename(out, file)
 
           })
-      }
-    )
-
-    output$exporta_excel_stros <- downloadHandler(
-
-      filename = function(){
-        glue(
-          "siniestros ",
-          seleccion$grupo_tipo,
-          " ",
-          substr(paste(seleccion$grupo_id, collapse = " "), 1, 50),
-          ".xlsx"
-        )
-      },
-
-      content = function(file) {
-
-        disable("div_boton_do")
-
-        wb <- createWorkbook()
-        addWorksheet(wb, "siniestros")
-        writeData(wb, "siniestros", vals$grupo$siniestralidad$rpt1)
-        wb <- formatear_columnas(
-          wb, metodo = "openxlsx",
-          hoja = "siniestros",
-          columnas_wb = names(vals$grupo$siniestralidad$rpt1),
-          filas_wb = nrow(vals$grupo$siniestralidad$rpt1),
-          hoja_estilos = stl
-        )
-
-        enable("div_boton_do")
-
-        saveWorkbook(wb, file = file, overwrite = TRUE)
-
-      }
-    )
-
-    output$exporta_excel_sdad <- downloadHandler(
-
-      filename = function(){
-        glue(
-          "sdad ",
-          seleccion$grupo_tipo,
-          " ",
-          substr(paste(seleccion$grupo_id, collapse = " "), 1, 50),
-          ".xlsx"
-        )
-      },
-
-      content = function(file) {
-
-        disable("div_boton_do")
-
-        wb <- createWorkbook()
-        addWorksheet(wb, "siniestralidad")
-        writeData(wb, "siniestralidad", vals$grupo$siniestralidad_per_cto)
-        wb <- formatear_columnas(
-          wb, metodo = "openxlsx",
-          hoja = "siniestralidad",
-          columnas_wb = names(vals$grupo$siniestralidad_per_cto),
-          filas_wb = nrow(vals$grupo$siniestralidad_per_cto),
-          hoja_estilos = stl
-        )
-
-        enable("div_boton_do")
-
-        saveWorkbook(wb, file = file, overwrite = TRUE)
-
       }
     )
 

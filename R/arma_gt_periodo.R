@@ -120,6 +120,13 @@ arma_gt_periodo <- function(
       RDO_H, `RDO_H_%`
     )
 
+
+  if(periodos_n > 5L){
+    credibilidad_IBNR <- c(rep(1, periodos_n - 5L), credibilidad_IBNR)
+  } else {
+    credibilidad_IBNR <- credibilidad_IBNR[(5L-periodos_n + 1L):5L]
+  }
+
   tablero$IBNER_CONFIANZA <- credibilidad_IBNR[per_x %in% tablero$PER]
 
   return(tablero)

@@ -7,7 +7,7 @@ cuadro_UI <- function(id) {
 
 cuadro_Server <- function(
   id,
-  vals,
+  rpt_periodo,
   modo_moneda,
   siniestralidad_target,
   nota_al_pie_especial = ""
@@ -17,9 +17,9 @@ cuadro_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    gt_tabla <- eventReactive(vals$rpt_periodo, {
+    gt_tabla <- eventReactive(rpt_periodo(), {
       gt_periodo(
-        vals$rpt_periodo,
+        rpt_periodo(),
         modo_moneda,
         siniestralidad_target = siniestralidad_target,
         nota_al_pie_especial = nota_al_pie_especial
@@ -28,6 +28,13 @@ cuadro_Server <- function(
 
     output$cuadro <- render_gt({
       gt_tabla()
+      # req(rpt_periodo())
+      # gt_periodo(
+      #   rpt_periodo(),
+      #   modo_moneda,
+      #   siniestralidad_target = siniestralidad_target,
+      #   nota_al_pie_especial = nota_al_pie_especial
+      # )
     })
 
     return(gt_tabla)

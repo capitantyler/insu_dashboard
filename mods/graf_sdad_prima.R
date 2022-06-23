@@ -17,16 +17,19 @@ graf_sdad_prima_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    grafico <- eventReactive(vals$rpt_periodo, {
-      plot_sdad_prima(
-        vals$rpt_periodo$PER,
-        vals$rpt_periodo$PRIMA_0_H,
-        vals$rpt_periodo$COMI_r_H,
-        vals$rpt_periodo$ESP_ULT_H,
-        vals$rpt_periodo$ILT_ULT_H,
-        vals$rpt_periodo$ILP_ULT_H,
-        vals$rpt_periodo$JUI_ULT_H,
-        PER_x = periodo
+    grafico <- eventReactive(vals$data,{
+      with(
+        vals$data[["siniestralidad_per"]],
+        plot_sdad_prima(
+          PER = PER,
+          PRIMA_ANUAL = PRIMA_0_H,
+          COMI_ANUAL = COMI_r_H,
+          ESPECIE = ESP_ULT_H,
+          ILT = ILT_ULT_H,
+          ILP = ILP_ULT_H,
+          JUICIOS = JUI_ULT_H,
+          PER_x = periodo
+        )
       )
     })
 

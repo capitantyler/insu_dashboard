@@ -32,29 +32,23 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE)
 
 \clearpage
 
-```{r prima_sdad, fig.cap = 'Prima y Siniestralidad', fig.ncol = 1, out.width = '90%', fig.align = 'center', fig.subcap=c('Waterfall Primas', 'Elementos de la Sdad 0\\textendash100\\%') }
+```{r prima_sdad, fig.align='center', fig.cap='Prima y Siniestralidad', fig.ncol=1, fig.subcap=c('Waterfall Primas', 'Elementos de la Sdad 0\\textendash100\\%'), warning=FALSE, out.width='90%'}
 
-graf_sdad_prima()
-graf_sdad_rvas()
-
-#  vals$plotsdadprima
-#  vals$plotsdadibner
+ params$vals$graf_sdad_prima()
+ params$vals$graf_sdad_rvas()
 
 ```
 \clearpage
 
-```{r frecuencia, fig.cap="Frecuencias", fig.height=9}
-library(gridExtra)
-library(cowplot)
+```{r frecuencia, fig.cap="Frecuencias", warning=FALSE, fig.height=9}
+  library(cowplot)
+  library(gridExtra)
 
-plot_grid(
-  graf_frec_total(),
-  graf_frec_jud(),
-  graf_frec_grmu_porinc(),
-  #vals$plotfrectotal, 
-  #vals$plotfrecjud, 
-  #vals$graf_frec_grmu_porinc, 
+ plot_grid(
+  params$vals$graf_frec_total(), 
+  params$vals$graf_frec_jud(), 
+  params$vals$graf_frec_grmu_porinc(), 
   align = "v", nrow = 3
-)
+ )
 
 ```

@@ -47,18 +47,36 @@ calcula_emisionConMovimientos <- function(
   ...
 ){
 
+  tablas_faltantes <- setdiff(
+    c("emiorig", "contratos", "sucursal"),
+    names(data)
+  )
+
+  if(length(tablas_faltantes) != 0) stop(glue(
+    "calcula_emisionConMovimientos: falta alguna de las siguientes tablas: ",
+    tablas_faltantes
+  ))
+
+
   if(
     length(data$contratos$CONTRATO) < contratos_x_cluster
   ){
 
-    rpt <- EmisionConMovimientos(
-      reportes = reportes,
-      emiorig = data$emiorig,
-      rectificativa = data$rectificativa,
-      domesticas = data$domesticas,
-      contratos = data$contratos,
-      sucursal = data$sucursal,
-      ...
+    pars <- list(...)
+
+    rpt <- do.call(
+      EmisionConMovimientos,
+      c(
+        list(
+          reportes = reportes,
+          emiorig = data$emiorig,
+          rectificativa = data$rectificativa,
+          domesticas = data$domesticas,
+          contratos = data$contratos,
+          sucursal = data$sucursal
+        ),
+        pars
+      )
     )
 
   } else {
@@ -93,7 +111,6 @@ calcula_emisionConMovimientos <- function(
 
   # achico reportes
   if(!is.null(columnas_reportes)){
-    # los [] conserva los nombres en la lista
     rpt[] <- lapply(
       reportes,
       function(x){

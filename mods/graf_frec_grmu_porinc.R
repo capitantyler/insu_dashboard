@@ -17,15 +17,18 @@ graf_frec_grmu_porinc_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    grafico <- eventReactive(vals$rpt_periodo, {
-      plot_frec_grmu_porinc(
-        vals$rpt_periodo$PER,
-        vals$rpt_periodo$GR,
-        vals$rpt_periodo$GR_FINAL,
-        vals$rpt_periodo$MU,
-        vals$rpt_periodo$MU_FINAL,
-        vals$rpt_periodo$PORINC_66,
-        PER_x = periodo
+    grafico <- eventReactive(vals,{
+      with(
+        vals,
+        plot_frec_grmu_porinc(
+          PER = PER,
+          GR = GR,
+          GR_ULT = GR_FINAL,
+          MU = MU,
+          MU_ULT = MU_FINAL,
+          PORINC_ULT= PORINC_66,
+          PER_x = periodo
+        )
       )
     })
 
@@ -36,5 +39,4 @@ graf_frec_grmu_porinc_Server <- function(
     return(grafico)
 
   })
-
 }

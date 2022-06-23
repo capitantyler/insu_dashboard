@@ -56,6 +56,17 @@ calcula_reporte_siniestros <- function(
     ...
 ){
 
+  tablas_faltantes <- setdiff(
+    c("emiorig", "contratos", "sucursal"),
+    names(data)
+  )
+
+  if(length(tablas_faltantes) != 0) stop(glue(
+    "calcula_reporte_siniestros: falta alguna de las siguientes tablas: ",
+    tablas_faltantes
+  ))
+
+
   if(
     length(data$siniestros$DENUNCIA) < denuncias_x_cluster
   ){
@@ -77,12 +88,26 @@ calcula_reporte_siniestros <- function(
 
   } else {
 
-    clusters_denuncias <- split(
-      data$siniestros$DENUNCIA,
-      ceiling(seq_along(data$siniestros$DENUNCIA)/denuncias_x_cluster)
+    clusters <- data$siniestros[,
+      .N, by = .(CONTRATO)
+    ][ order(-N)][,
+      freq_cto_acum := cumsum(N) / sum(N)
+    ][,
+      id := cut(
+        freq_cto_acum,
+        breaks = ceiling(sum(N)/denuncias_x_cluster),
+        labels = FALSE
+      )
+    ][,
+      .(CONTRATO, id)
+    ]
+
+    clusters_contratos <- split(
+      clusters,
+      clusters$id
     )
 
-    n_cluster <- length(clusters_denuncias)
+    n_cluster <- length(clusters_contratos)
 
     # progressSweetAlert(
     #   session = session,
@@ -93,10 +118,12 @@ calcula_reporte_siniestros <- function(
     # )
 
     rpt <- lapply(
-      clusters_denuncias,
+      clusters_contratos,
       function(x){
 
-        contratos_en_denuncias <- unique(data$siniestro[DENUNCIA %in% x][["CONTRATO"]])
+        denuncias_en_cluster <- unique(
+          data$siniestro[CONTRATO %in% x[["CONTRATO"]]][["DENUNCIA"]]
+        )
 
         # updateProgressBar(
         #   session = session,
@@ -109,11 +136,11 @@ calcula_reporte_siniestros <- function(
           c(
             list(
               reportes = reportes,
-              siniestros = data$siniestros[DENUNCIA %in% x],
-              liquidaciones = data$liquidaciones[DENUNCIA %in% x],
-              reservas = data$reservas[DENUNCIA %in% x],
-              juicios = data$juicios[DENUNCIA %in% x],
-              contratos = data$contratos[CONTRATO %in% contratos_en_denuncias]
+              siniestros = data$siniestros[DENUNCIA %in% denuncias_en_cluster],
+              liquidaciones = data$liquidaciones[DENUNCIA %in% denuncias_en_cluster],
+              reservas = data$reservas[DENUNCIA %in% denuncias_en_cluster],
+              juicios = data$juicios[DENUNCIA %in% denuncias_en_cluster],
+              contratos = data$contratos[CONTRATO %in% x[["CONTRATO"]]]
             ),
             ...
           )

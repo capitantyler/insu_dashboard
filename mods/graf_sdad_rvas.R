@@ -17,19 +17,34 @@ graf_sdad_rvas_Server <- function(
 
   moduleServer(id, function(input, output, session) {
 
-    grafico <- eventReactive(vals$rpt_periodo, {
-      plot_sdad_rvas(
-        vals$rpt_periodo$PER,
-        vals$rpt_periodo$PRIMA_0_H,
-        vals$rpt_periodo$TOT_LIQ_0_H,
-        vals$rpt_periodo$TOT_RVA,
-        vals$rpt_periodo$TOT_IBNER_H,
-        PER_x = periodo
+    grafico <- eventReactive(vals$data,{
+      with(
+        vals$data[["siniestralidad_per"]],
+        plot_sdad_rvas(
+          PER = PER,
+          PRIMA_ANUAL = PRIMA_0_H,
+          TOT_LIQ = TOT_LIQ_0_H,
+          TOT_RVA = TOT_RVA,
+          TOT_IBNER = TOT_IBNER_H,
+          PER_x = periodo
+        )
       )
     })
 
     output$grafico <- renderPlot({
       grafico()
+      # req(vals$data)
+      # with(
+      #   vals$data[["siniestralidad_per"]],
+      #   plot_sdad_rvas(
+      #     PER = PER,
+      #     PRIMA_ANUAL = PRIMA_0_H,
+      #     TOT_LIQ = TOT_LIQ_0_H,
+      #     TOT_RVA = TOT_RVA,
+      #     TOT_IBNER = TOT_IBNER_H,
+      #     PER_x = periodo
+      #   )
+      # )
     })
 
     return(grafico)

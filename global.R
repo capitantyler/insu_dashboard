@@ -25,6 +25,20 @@ opciones <- list(
 
 )
 
+## funciones ----
+
+acomoda_argumentos <- function(args){
+  output <- NULL
+  for (x in seq(length(args))) {
+    list <- args[x]
+    if (is.list(args[[x]]) && !is.data.frame(args[[x]])) {
+      list <- flatten(args[x])
+    }
+    output <- append(output, list)
+  }
+  return(output)
+}
+
 # frecuencia de IBNR de casos
 patron_fda <- c(
   1.18128, 1.048189, 1.028861, 1.01834, 1.010708, 1.005068
@@ -81,7 +95,7 @@ lista_grupo_id <- list(
       distinct(GRUPO_EC) %>%
       arrange(GRUPO_EC),
 
-    default = "GRUPO AUTOFARMA"
+    default = "CARGILL"
   ),
 
   sucursales = list(
@@ -92,7 +106,7 @@ lista_grupo_id <- list(
       mutate(sucursal = paste(sprintf("%2s", SUC_ID), SUCURSAL, sep = "-")) %>%
       select(SUC_ID, sucursal),
 
-    default = 10
+    default = 14
   ),
 
   regiones = list(
@@ -104,7 +118,7 @@ lista_grupo_id <- list(
       select(REG_ID, region) %>%
       distinct(),
 
-    default = 1 
+    default = 1 # "CUYO"
   ),
 
   provincias = list(
@@ -113,7 +127,7 @@ lista_grupo_id <- list(
       filter(ID %!in% c(0, 25, 99)) %>%
       select(ID, PROVINCIA),
 
-    default = 2 
+    default = 5 #"CORRIENTES"
   ),
 
   CIIUR2 = list(
@@ -124,7 +138,7 @@ lista_grupo_id <- list(
         value = CIIU_R2,
         label = paste(sprintf("%2s", CIIU_R2), CIIU_R2_DESC, sep = "-")
       ),
-    default = 931012
+    default = 111147
 
   ),
 
@@ -161,7 +175,8 @@ lista_grupo_id <- list(
   ),
 
   uc = list(
-    default = "33871"
+
+    default = "9944 29913"
   ),
 
   pas = list(
@@ -170,11 +185,13 @@ lista_grupo_id <- list(
   ),
 
   contratos = list(
-    default = "254631"
+
+    default = "157023"  #"188909 345807"
   ),
 
   cuit = list(
-    default = "33568889849 33662372159"
+
+    default = "30632632645 30613665079"
   )
 
 )
